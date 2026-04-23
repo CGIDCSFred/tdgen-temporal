@@ -11,16 +11,27 @@ import pandas as pd
 from tdgen_temporal.db.state_store import StateStore
 
 _SNAPSHOT_TABLES = [
-    "CLIENT", "PROVIDER", "PRODUCT_DEFINITION", "MERCHANT",
-    "ACCOUNT", "CUSTOMER", "CARD", "AUTHORIZATION", "TRANSACTION",
-    "STATEMENT", "DISPUTE", "CHARGEBACK", "FRAUD_ALERT",
-    "SCORE_RECORD", "COLLECTION_CASE",
+    "CLIENT",
+    "PROVIDER",
+    "PRODUCT_DEFINITION",
+    "MERCHANT",
+    "ACCOUNT",
+    "CUSTOMER",
+    "CARD",
+    "AUTHORIZATION",
+    "TRANSACTION",
+    "STATEMENT",
+    "DISPUTE",
+    "CHARGEBACK",
+    "FRAUD_ALERT",
+    "SCORE_RECORD",
+    "COLLECTION_CASE",
 ]
 
 
 class SnapshotWriter:
     def __init__(self, output_root: Path, formats: list[str]) -> None:
-        self._root    = output_root
+        self._root = output_root
         self._formats = formats
 
     def write(self, run_date: date, store: StateStore) -> list[str]:

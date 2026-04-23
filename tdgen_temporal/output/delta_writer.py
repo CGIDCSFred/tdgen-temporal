@@ -20,13 +20,13 @@ import pandas as pd
 @dataclass
 class DeltaSet:
     run_date: date
-    inserts:  dict[str, list[dict]] = field(default_factory=dict)
-    updates:  dict[str, list[dict]] = field(default_factory=dict)
+    inserts: dict[str, list[dict]] = field(default_factory=dict)
+    updates: dict[str, list[dict]] = field(default_factory=dict)
 
 
 class DeltaWriter:
     def __init__(self, output_root: Path, formats: list[str]) -> None:
-        self._root    = output_root
+        self._root = output_root
         self._formats = formats
 
     def write(self, delta: DeltaSet) -> dict[str, list[str]]:
