@@ -111,6 +111,9 @@ class DailyRunner:
         new_collection_cases = []
 
         for acc in accounts:
+            open_date_str = acc.get("open_date")
+            if open_date_str and run_date < date.fromisoformat(open_date_str):
+                continue
             res = self._sm_account.advance(acc, run_date, config, rng)
             row = res.updated_row
             acc_updates.append(row)

@@ -64,6 +64,9 @@ def generate_daily_transactions(
         status = account.get("account_status", "ACTIVE")
         if status in ("CLOSED", "CHARGEOFF"):
             continue
+        open_date_str = account.get("open_date")
+        if open_date_str and run_date < date.fromisoformat(open_date_str):
+            continue
 
         # Number of transactions today for this account
         n_tx = max(0, int(rng.gauss(mean, std)))

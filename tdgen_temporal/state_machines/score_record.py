@@ -29,6 +29,10 @@ class ScoreRecordStateMachine(StateMachine):
 
         new_rows: dict[str, list[dict]] = {}
 
+        open_date_str = row.get("open_date")
+        if open_date_str and run_date < date.fromisoformat(open_date_str):
+            return AdvanceResult(updated_row=row, changed_fields=[], new_rows={})
+
         if run_date.day == refresh_day:
             current_score = int(row.get("score_value") or row.get("risk_score") or 650)
             state = row.get("account_status", "ACTIVE")
