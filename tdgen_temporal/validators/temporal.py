@@ -10,20 +10,104 @@ _E = Severity.ERROR
 _W = Severity.WARNING
 
 CHECKS: list[Check] = [
-    Check("account.open_date > closed_date",                          "temporal", _E, "ACCOUNT",     "Account closed_date must not precede open_date"),
-    Check("account.last_payment_date < open_date",                    "temporal", _E, "ACCOUNT",     "Account last_payment_date must not precede open_date"),
-    Check("card.issue_date >= expiry_date",                           "temporal", _E, "CARD",        "Card expiry_date must be after issue_date"),
-    Check("transaction.post_date < transaction_date",                 "temporal", _E, "TRANSACTION", "Transaction post_date must not precede transaction_date"),
-    Check("transaction.post_date > transaction_date + 3 days",        "temporal", _W, "TRANSACTION", "Transaction post_date should be within 3 days of transaction_date"),
-    Check("authorization.auth_timestamp > transaction.transaction_date", "temporal", _E, "TRANSACTION", "Authorization timestamp must not be later than its transaction date"),
-    Check("transaction after account closed_date",                    "temporal", _E, "TRANSACTION", "No transactions should exist after an account's closed_date"),
-    Check("transaction before account open_date",                     "temporal", _E, "TRANSACTION", "No transactions should exist before an account's open_date"),
-    Check("dispute.opened_date < transaction.transaction_date",       "temporal", _E, "DISPUTE",     "Dispute must be opened on or after its underlying transaction date"),
-    Check("dispute.resolved_date < dispute_opened_date",              "temporal", _E, "DISPUTE",     "Dispute resolved_date must not precede dispute_opened_date"),
-    Check("chargeback.chargeback_date < dispute.dispute_opened_date", "temporal", _E, "CHARGEBACK",  "Chargeback date must not precede the parent dispute's opened date"),
-    Check("chargeback.chargeback_date < dispute.resolved_date",       "temporal", _W, "CHARGEBACK",  "Chargeback date should not precede the dispute's resolved date"),
-    Check("statement.payment_due_date <= statement_date",             "temporal", _E, "STATEMENT",   "Statement payment_due_date must be after the statement_date"),
-    Check("score_record.score_date < account.open_date",              "temporal", _E, "SCORE_RECORD","Score record score_date must not precede the account's open_date"),
+    Check(
+        "account.open_date > closed_date",
+        "temporal",
+        _E,
+        "ACCOUNT",
+        "Account closed_date must not precede open_date",
+    ),
+    Check(
+        "account.last_payment_date < open_date",
+        "temporal",
+        _E,
+        "ACCOUNT",
+        "Account last_payment_date must not precede open_date",
+    ),
+    Check(
+        "card.issue_date >= expiry_date",
+        "temporal",
+        _E,
+        "CARD",
+        "Card expiry_date must be after issue_date",
+    ),
+    Check(
+        "transaction.post_date < transaction_date",
+        "temporal",
+        _E,
+        "TRANSACTION",
+        "Transaction post_date must not precede transaction_date",
+    ),
+    Check(
+        "transaction.post_date > transaction_date + 3 days",
+        "temporal",
+        _W,
+        "TRANSACTION",
+        "Transaction post_date should be within 3 days of transaction_date",
+    ),
+    Check(
+        "authorization.auth_timestamp > transaction.transaction_date",
+        "temporal",
+        _E,
+        "TRANSACTION",
+        "Authorization timestamp must not be later than its transaction date",
+    ),
+    Check(
+        "transaction after account closed_date",
+        "temporal",
+        _E,
+        "TRANSACTION",
+        "No transactions should exist after an account's closed_date",
+    ),
+    Check(
+        "transaction before account open_date",
+        "temporal",
+        _E,
+        "TRANSACTION",
+        "No transactions should exist before an account's open_date",
+    ),
+    Check(
+        "dispute.opened_date < transaction.transaction_date",
+        "temporal",
+        _E,
+        "DISPUTE",
+        "Dispute must be opened on or after its underlying transaction date",
+    ),
+    Check(
+        "dispute.resolved_date < dispute_opened_date",
+        "temporal",
+        _E,
+        "DISPUTE",
+        "Dispute resolved_date must not precede dispute_opened_date",
+    ),
+    Check(
+        "chargeback.chargeback_date < dispute.dispute_opened_date",
+        "temporal",
+        _E,
+        "CHARGEBACK",
+        "Chargeback date must not precede the parent dispute's opened date",
+    ),
+    Check(
+        "chargeback.chargeback_date < dispute.resolved_date",
+        "temporal",
+        _W,
+        "CHARGEBACK",
+        "Chargeback date should not precede the dispute's resolved date",
+    ),
+    Check(
+        "statement.payment_due_date <= statement_date",
+        "temporal",
+        _E,
+        "STATEMENT",
+        "Statement payment_due_date must be after the statement_date",
+    ),
+    Check(
+        "score_record.score_date < account.open_date",
+        "temporal",
+        _E,
+        "SCORE_RECORD",
+        "Score record score_date must not precede the account's open_date",
+    ),
 ]
 
 _SQLS: dict[str, str] = {
@@ -97,9 +181,11 @@ def run(conn: sqlite3.Connection) -> list[Finding]:
     for name, sql in _SQLS.items():
         rows = conn.execute(sql).fetchall()
         if rows:
-            findings.append(Finding(
-                check=check_map[name],
-                count=len(rows),
-                examples=[r[0] for r in rows[:5]],
-            ))
+            findings.append(
+                Finding(
+                    check=check_map[name],
+                    count=len(rows),
+                    examples=[r[0] for r in rows[:5]],
+                )
+            )
     return findings

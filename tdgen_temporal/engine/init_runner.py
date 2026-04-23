@@ -2,22 +2,24 @@
 Init runner — seeds the database from scratch for Day 0.
 """
 
-import random
 import time
 import uuid
 from datetime import date
 from pathlib import Path
 
 import yaml
-from faker import Faker
 
 from tdgen_temporal.db.migrations import create_all_tables
 from tdgen_temporal.db.state_store import StateStore
+from tdgen_temporal.generators.field_generators import make_faker
 from tdgen_temporal.generators.ref_tables import REF_DATA
 from tdgen_temporal.generators.seed import (
-    seed_accounts, seed_clients, seed_merchants, seed_products, seed_providers,
+    seed_accounts,
+    seed_clients,
+    seed_merchants,
+    seed_products,
+    seed_providers,
 )
-from tdgen_temporal.generators.field_generators import make_faker
 
 
 def run_init(
@@ -32,12 +34,11 @@ def run_init(
     t0 = time.perf_counter()
 
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    sim    = config.get("simulation", {})
-    pop    = sim.get("initial_population", {})
+    sim = config.get("simulation", {})
+    pop = sim.get("initial_population", {})
 
-    seed   = sim.get("seed", 42)
-    fake   = make_faker(seed)
-    rng    = random.Random(seed)
+    seed = sim.get("seed", 42)
+    fake = make_faker(seed)
 
     if run_date is None:
         run_date = date.today()
@@ -54,10 +55,23 @@ def run_init(
     store = StateStore(db_path)
 
     # Initialise PK sequences
-    for tbl in ["CLIENT", "PROVIDER", "PRODUCT_DEFINITION", "MERCHANT",
-                "ACCOUNT", "CUSTOMER", "CARD", "AUTHORIZATION", "TRANSACTION",
-                "STATEMENT", "DISPUTE", "CHARGEBACK", "FRAUD_ALERT",
-                "SCORE_RECORD", "COLLECTION_CASE"]:
+    for tbl in [
+        "CLIENT",
+        "PROVIDER",
+        "PRODUCT_DEFINITION",
+        "MERCHANT",
+        "ACCOUNT",
+        "CUSTOMER",
+        "CARD",
+        "AUTHORIZATION",
+        "TRANSACTION",
+        "STATEMENT",
+        "DISPUTE",
+        "CHARGEBACK",
+        "FRAUD_ALERT",
+        "SCORE_RECORD",
+        "COLLECTION_CASE",
+    ]:
         store.init_sequence(tbl, 1)
 
     # REF tables
@@ -66,11 +80,11 @@ def run_init(
         store.bulk_insert(table_name, rows)
 
     # Core entities
-    n_clients   = pop.get("clients",   3)
+    n_clients = pop.get("clients", 3)
     n_providers = pop.get("providers", 10)
-    n_products  = pop.get("products",  20)
+    n_products = pop.get("products", 20)
     n_merchants = pop.get("merchants", 200)
-    n_accounts  = pop.get("accounts",  500)
+    n_accounts = pop.get("accounts", 500)
 
     print(f"[init] Seeding {n_clients} clients...")
     clients = seed_clients(fake, n_clients, store)
@@ -92,9 +106,9 @@ def run_init(
     accounts, customers, cards, temp_states = seed_accounts(
         fake, providers, products, n_accounts, run_date, store
     )
-    store.bulk_insert("ACCOUNT",  accounts)
+    store.bulk_insert("ACCOUNT", accounts)
     store.bulk_insert("CUSTOMER", customers)
-    store.bulk_insert("CARD",     cards)
+    store.bulk_insert("CARD", cards)
     store.bulk_upsert("account_temporal_state", temp_states)
 
     # Set simulation clock
@@ -105,9 +119,13 @@ def run_init(
         run_mode="init",
         accounts_processed=len(accounts),
         inserts={
-            "CLIENT": len(clients), "PROVIDER": len(providers),
-            "PRODUCT_DEFINITION": len(products), "MERCHANT": len(merchants),
-            "ACCOUNT": len(accounts), "CUSTOMER": len(customers), "CARD": len(cards),
+            "CLIENT": len(clients),
+            "PROVIDER": len(providers),
+            "PRODUCT_DEFINITION": len(products),
+            "MERCHANT": len(merchants),
+            "ACCOUNT": len(accounts),
+            "CUSTOMER": len(customers),
+            "CARD": len(cards),
         },
         updates={},
         duration=time.perf_counter() - t0,
@@ -116,15 +134,15 @@ def run_init(
 
     elapsed = time.perf_counter() - t0
     summary = {
-        "run_id":    run_id,
-        "run_date":  run_date.isoformat(),
-        "db_path":   str(db_path),
-        "tables":    len(REF_DATA) + 5,
-        "accounts":  len(accounts),
+        "run_id": run_id,
+        "run_date": run_date.isoformat(),
+        "db_path": str(db_path),
+        "tables": len(REF_DATA) + 5,
+        "accounts": len(accounts),
         "customers": len(customers),
-        "cards":     len(cards),
+        "cards": len(cards),
         "merchants": len(merchants),
-        "duration":  round(elapsed, 2),
+        "duration": round(elapsed, 2),
     }
 
     print(f"\n[init] Done in {elapsed:.1f}s")

@@ -5,8 +5,7 @@ Standalone copy — no dependency on test-data-gen.
 
 import random
 import string
-from datetime import date, datetime, timedelta
-from typing import Any
+from datetime import date, timedelta
 
 from faker import Faker
 
@@ -20,6 +19,7 @@ def make_faker(seed: int | None = None) -> Faker:
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
+
 
 def random_decimal(mn: float, mx: float, decimals: int = 2) -> float:
     return round(random.uniform(mn, mx), decimals)
@@ -47,7 +47,7 @@ def generate_card_number() -> str:
 
 def generate_sin() -> str:
     """Synthetic Canadian SIN — format-compliant but not real."""
-    return f"{random.randint(100,899)}-{random.randint(100,999)}-{random.randint(100,999)}"
+    return f"{random.randint(100, 899)}-{random.randint(100, 999)}-{random.randint(100, 999)}"
 
 
 def generate_account_number() -> str:
@@ -83,7 +83,7 @@ def delinquency_bucket(days: int) -> str:
 
 
 _CA_PROVINCES = ["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "NL", "PE"]
-_US_STATES    = ["CA", "TX", "NY", "FL", "IL", "PA", "OH", "GA", "NC", "MI"]
+_US_STATES = ["CA", "TX", "NY", "FL", "IL", "PA", "OH", "GA", "NC", "MI"]
 _PROVINCE_STATE = _CA_PROVINCES + _US_STATES
 
 _NETWORKS = ["VisaNet", "BankNet", "AmexNet", "Interac"]
@@ -92,31 +92,45 @@ _POS_ENTRY = ["chip", "swipe", "contactless", "manual", "ecommerce"]
 _AUTH_RESP_APPROVED = ["00", "10", "11"]
 _AUTH_RESP_DECLINED = ["05", "14", "51", "54", "57", "61"]
 _CARD_BRANDS = ["Visa", "Mastercard", "Amex", "Interac"]
-_CURRENCIES  = ["CAD", "USD", "EUR", "GBP"]
-_MCC_CODES   = [
-    "5411", "5812", "5541", "5310", "5912", "5999", "4111",
-    "4121", "5734", "7011", "5045", "5065", "5621", "5651",
+_CURRENCIES = ["CAD", "USD", "EUR", "GBP"]
+_MCC_CODES = [
+    "5411",
+    "5812",
+    "5541",
+    "5310",
+    "5912",
+    "5999",
+    "4111",
+    "4121",
+    "5734",
+    "7011",
+    "5045",
+    "5065",
+    "5621",
+    "5651",
 ]
 
 _STATEMENT_NARRATIVES = [
-    lambda f: f"AMZN MKTP CA*{random.randint(100000,999999)}",
-    lambda f: f"TIM HORTONS #{random.randint(1000,9999)}",
-    lambda f: f"WALMART SUPERCENTRE #{random.randint(1000,9999)}",
-    lambda f: f"COSTCO WHOLESALE #{random.randint(1000,9999)}",
-    lambda f: f"SHELL OIL {random.randint(10000,99999)}",
-    lambda f: f"UBER* {random.choice(['TRIP','EATS'])} {f.lexify('???').upper()}{random.randint(10,99)}",
+    lambda f: f"AMZN MKTP CA*{random.randint(100000, 999999)}",
+    lambda f: f"TIM HORTONS #{random.randint(1000, 9999)}",
+    lambda f: f"WALMART SUPERCENTRE #{random.randint(1000, 9999)}",
+    lambda f: f"COSTCO WHOLESALE #{random.randint(1000, 9999)}",
+    lambda f: f"SHELL OIL {random.randint(10000, 99999)}",
+    lambda f: (
+        f"UBER* {random.choice(['TRIP', 'EATS'])} {f.lexify('???').upper()}{random.randint(10, 99)}"
+    ),
     lambda f: "NETFLIX.COM",
     lambda f: "APPLE.COM/BILL",
     lambda f: f"SHOPIFY* {f.last_name().upper()} STORE",
     lambda f: f"PAYPAL *{f.last_name().upper()}",
-    lambda f: f"LOBLAWS #{random.randint(1000,9999)}",
-    lambda f: f"METRO INC #{random.randint(1000,9999)}",
+    lambda f: f"LOBLAWS #{random.randint(1000, 9999)}",
+    lambda f: f"METRO INC #{random.randint(1000, 9999)}",
     lambda f: f"POS PURCHASE {f.bothify('??###').upper()}",
     lambda f: f"INTERAC E-TFR {f.first_name().upper()} {f.last_name().upper()}",
     lambda f: "FOREIGN TXN FEE",
     lambda f: "INTEREST CHARGE",
     lambda f: "ANNUAL FEE",
-    lambda f: f"TD BANK PAYMENT THANK YOU",
+    lambda f: "TD BANK PAYMENT THANK YOU",
 ]
 
 
@@ -125,10 +139,16 @@ def random_narrative(fake: Faker) -> str:
 
 
 _CARD_PRODUCT_NAMES = [
-    "TD Rewards Visa", "TD Aeroplan Visa Infinite", "TD Cash Back Mastercard",
-    "TD Platinum Travel Visa", "TD First Class Travel Visa Infinite",
-    "TD Rewards Mastercard", "TD Business Travel Visa", "TD Emerald Flex Rate Visa",
-    "TD Low Rate Visa", "TD Aeroplan Visa",
+    "TD Rewards Visa",
+    "TD Aeroplan Visa Infinite",
+    "TD Cash Back Mastercard",
+    "TD Platinum Travel Visa",
+    "TD First Class Travel Visa Infinite",
+    "TD Rewards Mastercard",
+    "TD Business Travel Visa",
+    "TD Emerald Flex Rate Visa",
+    "TD Low Rate Visa",
+    "TD Aeroplan Visa",
 ]
 
 
@@ -139,7 +159,7 @@ def random_product_name() -> str:
 def expiry_date_from_today(years_ahead: int = 3) -> str:
     """Return YYYY-MM-DD expiry roughly years_ahead from today, end of month."""
     today = date.today()
-    exp_year  = today.year + years_ahead + random.randint(0, 2)
+    exp_year = today.year + years_ahead + random.randint(0, 2)
     exp_month = random.randint(1, 12)
     # Last day of that month
     if exp_month == 12:
@@ -156,7 +176,7 @@ def random_past_date(
     not_before: date | None = None,
 ) -> str:
     ceiling = (as_of or date.today()) - timedelta(days=1)
-    start   = ceiling - timedelta(days=years_back * 365)
+    start = ceiling - timedelta(days=years_back * 365)
     if not_before and not_before > start:
         start = not_before
     if start > ceiling:

@@ -5,8 +5,8 @@ SCORE_RECORD state machine — monthly refresh per account.
 import random
 from datetime import date
 
-from tdgen_temporal.state_machines.base import AdvanceResult, StateMachine
 from tdgen_temporal.generators.field_generators import score_band
+from tdgen_temporal.state_machines.base import AdvanceResult, StateMachine
 
 
 class ScoreRecordStateMachine(StateMachine):
@@ -23,8 +23,8 @@ class ScoreRecordStateMachine(StateMachine):
         config: dict,
         rng: random.Random,
     ) -> AdvanceResult:
-        row     = dict(entity_row)
-        rates   = config.get("rates", {})
+        row = dict(entity_row)
+        rates = config.get("rates", {})
         refresh_day = int(rates.get("score_refresh_day", 1))
 
         new_rows: dict[str, list[dict]] = {}
@@ -40,10 +40,10 @@ class ScoreRecordStateMachine(StateMachine):
                 drift = rng.randint(-10, 15)
 
             new_score = max(300, min(850, current_score + drift))
-            band      = score_band(new_score)
+            band = score_band(new_score)
 
             score_types = ["FICO", "TRIAD", "internal", "behavioral", "bureau"]
-            models      = ["v3.1", "v3.2", "v4.0"]
+            models = ["v3.1", "v3.2", "v4.0"]
 
             # Decision based on score
             if new_score >= 700:
@@ -55,17 +55,19 @@ class ScoreRecordStateMachine(StateMachine):
             else:
                 decision = rng.choice(["decline", "restrict"])
 
-            new_rows["SCORE_RECORD"] = [{
-                "_account_id":  row["account_id"],
-                "_score_date":  run_date.isoformat(),
-                "_score_type":  rng.choice(score_types),
-                "_score_value": new_score,
-                "_score_band":  band,
-                "_model_version": rng.choice(models),
-                "_decision":    decision,
-                "_action_code": None,
-                "_result_code": None,
-            }]
+            new_rows["SCORE_RECORD"] = [
+                {
+                    "_account_id": row["account_id"],
+                    "_score_date": run_date.isoformat(),
+                    "_score_type": rng.choice(score_types),
+                    "_score_value": new_score,
+                    "_score_band": band,
+                    "_model_version": rng.choice(models),
+                    "_decision": decision,
+                    "_action_code": None,
+                    "_result_code": None,
+                }
+            ]
 
             # Update account risk_score
             row["risk_score"] = float(new_score)

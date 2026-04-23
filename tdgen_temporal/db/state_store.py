@@ -21,9 +21,7 @@ class StateStore:
     # ── Simulation meta ────────────────────────────────────────────────────
 
     def get_simulation_meta(self) -> dict | None:
-        row = self._conn.execute(
-            "SELECT * FROM simulation_meta WHERE id = 1"
-        ).fetchone()
+        row = self._conn.execute("SELECT * FROM simulation_meta WHERE id = 1").fetchone()
         return dict(row) if row else None
 
     def set_simulation_meta(self, run_date: date, run_id: str, total_runs: int) -> None:
@@ -62,9 +60,7 @@ class StateStore:
         if row is None:
             # Initialise from current max or 1
             try:
-                max_row = self._conn.execute(
-                    f'SELECT MAX(rowid) FROM "{table_name}"'
-                ).fetchone()
+                max_row = self._conn.execute(f'SELECT MAX(rowid) FROM "{table_name}"').fetchone()
                 next_id = (max_row[0] or 0) + 1
             except Exception:
                 next_id = 1
@@ -238,6 +234,7 @@ class StateStore:
 
     def get_cards_expiring_within(self, run_date: date, days: int = 30) -> list[dict]:
         from datetime import timedelta
+
         cutoff = (run_date + timedelta(days=days)).isoformat()[:7]  # YYYY-MM
         rows = self._conn.execute(
             "SELECT * FROM CARD WHERE expiry_date <= ? AND card_status = 'ACTIVE'",
@@ -247,9 +244,16 @@ class StateStore:
 
     # ── Run log ────────────────────────────────────────────────────────────
 
-    def record_run(self, run_id: str, run_date: date, run_mode: str,
-                   accounts_processed: int, inserts: dict, updates: dict,
-                   duration: float) -> None:
+    def record_run(
+        self,
+        run_id: str,
+        run_date: date,
+        run_mode: str,
+        accounts_processed: int,
+        inserts: dict,
+        updates: dict,
+        duration: float,
+    ) -> None:
         self._conn.execute(
             """
             INSERT INTO run_log
@@ -258,9 +262,14 @@ class StateStore:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                run_id, run_date.isoformat(), run_mode, accounts_processed,
-                json.dumps(inserts), json.dumps(updates),
-                duration, datetime.now().isoformat(),
+                run_id,
+                run_date.isoformat(),
+                run_mode,
+                accounts_processed,
+                json.dumps(inserts),
+                json.dumps(updates),
+                duration,
+                datetime.now().isoformat(),
             ),
         )
         self._conn.commit()

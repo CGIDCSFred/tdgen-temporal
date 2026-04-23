@@ -9,24 +9,24 @@ from pathlib import Path
 
 
 class Severity(str, Enum):
-    ERROR   = "ERROR"    # definite integrity violation
+    ERROR = "ERROR"  # definite integrity violation
     WARNING = "WARNING"  # plausibility issue, not strictly wrong
 
 
 @dataclass
 class Check:
-    name:        str       # unique machine-readable key
-    category:    str       # "referential" | "temporal" | "state"
-    severity:    Severity
-    table:       str       # primary table being checked
-    description: str       # one-line human description
+    name: str  # unique machine-readable key
+    category: str  # "referential" | "temporal" | "state"
+    severity: Severity
+    table: str  # primary table being checked
+    description: str  # one-line human description
 
 
 @dataclass
 class Finding:
-    check:     Check
-    count:     int          # number of violating rows
-    examples:  list = field(default_factory=list)   # up to 5 example PKs
+    check: Check
+    count: int  # number of violating rows
+    examples: list = field(default_factory=list)  # up to 5 example PKs
 
     @property
     def severity(self) -> Severity:
@@ -41,25 +41,25 @@ def print_report(
     finding_map = {f.check.name: f for f in findings}
 
     categories = ["referential", "temporal", "state"]
-    cat_labels  = {
+    cat_labels = {
         "referential": "Referential Integrity",
-        "temporal":    "Temporal Integrity",
-        "state":       "State Consistency",
+        "temporal": "Temporal Integrity",
+        "state": "State Consistency",
     }
 
-    total_checks  = len(checks)
-    total_pass    = total_checks - len(findings)
-    total_errors  = sum(1 for f in findings if f.severity == Severity.ERROR)
+    total_checks = len(checks)
+    total_pass = total_checks - len(findings)
+    total_errors = sum(1 for f in findings if f.severity == Severity.ERROR)
     total_warnings = sum(1 for f in findings if f.severity == Severity.WARNING)
-    total_rows    = sum(f.count for f in findings)
+    total_rows = sum(f.count for f in findings)
 
     W_name = 48
-    W_sev  = 8
-    W_tbl  = 30
+    W_sev = 8
+    W_tbl = 30
 
     print()
     print("=" * 100)
-    print(f"  TDGEN-TEMPORAL  --  Data Integrity Report")
+    print("  TDGEN-TEMPORAL  --  Data Integrity Report")
     print("=" * 100)
 
     for cat in categories:
@@ -70,20 +70,24 @@ def print_report(
         print()
         print(f"  {cat_labels[cat]}")
         print(f"  {'-' * 97}")
-        print(f"  {'Check':<{W_name}}  {'Sev':<{W_sev}}  {'Table':<{W_tbl}}  {'Status':>8}  {'Rows':>6}")
+        print(
+            f"  {'Check':<{W_name}}  {'Sev':<{W_sev}}  {'Table':<{W_tbl}}  {'Status':>8}  {'Rows':>6}"
+        )
         print(f"  {'-' * W_name}  {'-' * W_sev}  {'-' * W_tbl}  {'-' * 8}  {'-' * 6}")
 
         for chk in cat_checks:
             f = finding_map.get(chk.name)
             if f:
                 status = "FAIL"
-                rows   = str(f.count)
+                rows = str(f.count)
             else:
                 status = "PASS"
-                rows   = "-"
+                rows = "-"
 
             sev = chk.severity.value
-            print(f"  {chk.name:<{W_name}}  {sev:<{W_sev}}  {chk.table:<{W_tbl}}  {status:>8}  {rows:>6}")
+            print(
+                f"  {chk.name:<{W_name}}  {sev:<{W_sev}}  {chk.table:<{W_tbl}}  {status:>8}  {rows:>6}"
+            )
 
             if verbose and f and f.examples:
                 ex = ", ".join(str(e) for e in f.examples[:5])
@@ -91,7 +95,7 @@ def print_report(
 
     print()
     print("=" * 100)
-    print(f"  Summary")
+    print("  Summary")
     print(f"  {'-' * 97}")
     print(f"  Total checks   : {total_checks}")
     print(f"  Passed         : {total_pass}")
@@ -110,23 +114,33 @@ def generate_html_report(
 ) -> None:
     finding_map = {f.check.name: f for f in findings}
 
-    total_checks   = len(checks)
-    total_pass     = total_checks - len(findings)
-    total_errors   = sum(1 for f in findings if f.severity == Severity.ERROR)
+    total_checks = len(checks)
+    total_pass = total_checks - len(findings)
+    total_errors = sum(1 for f in findings if f.severity == Severity.ERROR)
     total_warnings = sum(1 for f in findings if f.severity == Severity.WARNING)
-    total_rows     = sum(f.count for f in findings)
-    generated_at   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    total_rows = sum(f.count for f in findings)
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    overall_class = "ok" if total_errors == 0 and total_warnings == 0 else \
-                    "warn" if total_errors == 0 else "fail"
-    overall_label = "ALL CLEAR" if overall_class == "ok" else \
-                    "WARNINGS" if overall_class == "warn" else "ERRORS FOUND"
+    overall_class = (
+        "ok"
+        if total_errors == 0 and total_warnings == 0
+        else "warn"
+        if total_errors == 0
+        else "fail"
+    )
+    overall_label = (
+        "ALL CLEAR"
+        if overall_class == "ok"
+        else "WARNINGS"
+        if overall_class == "warn"
+        else "ERRORS FOUND"
+    )
 
     categories = ["referential", "temporal", "state"]
     cat_labels = {
         "referential": "Referential Integrity",
-        "temporal":    "Temporal Integrity",
-        "state":       "State Consistency",
+        "temporal": "Temporal Integrity",
+        "state": "State Consistency",
     }
 
     def _rows_html(cat: str) -> str:
@@ -135,16 +149,20 @@ def generate_html_report(
         for chk in cat_checks:
             f = finding_map.get(chk.name)
             if f:
-                status_cell = f'<td class="status fail">FAIL</td>'
-                row_cell    = f'<td class="num fail-num">{f.count:,}</td>'
-                examples    = f'<div class="examples">example PKs: {", ".join(str(e) for e in f.examples[:5])}</div>' if f.examples else ""
-                desc_extra  = examples
-                row_class   = "row-fail"
+                status_cell = '<td class="status fail">FAIL</td>'
+                row_cell = f'<td class="num fail-num">{f.count:,}</td>'
+                examples = (
+                    f'<div class="examples">example PKs: {", ".join(str(e) for e in f.examples[:5])}</div>'
+                    if f.examples
+                    else ""
+                )
+                desc_extra = examples
+                row_class = "row-fail"
             else:
-                status_cell = f'<td class="status pass">PASS</td>'
-                row_cell    = f'<td class="num">-</td>'
-                desc_extra  = ""
-                row_class   = ""
+                status_cell = '<td class="status pass">PASS</td>'
+                row_cell = '<td class="num">-</td>'
+                desc_extra = ""
+                row_class = ""
 
             sev_class = "sev-error" if chk.severity == Severity.ERROR else "sev-warn"
             rows.append(
@@ -153,9 +171,9 @@ def generate_html_report(
                 f'<td class="desc">{chk.description}{desc_extra}</td>'
                 f'<td><span class="badge {sev_class}">{chk.severity.value}</span></td>'
                 f'<td class="tbl-name">{chk.table}</td>'
-                f'{status_cell}'
-                f'{row_cell}'
-                f'</tr>'
+                f"{status_cell}"
+                f"{row_cell}"
+                f"</tr>"
             )
         return "\n".join(rows)
 
@@ -164,12 +182,19 @@ def generate_html_report(
         cat_checks = [c for c in checks if c.category == cat]
         if not cat_checks:
             continue
-        cat_pass  = sum(1 for c in cat_checks if c.name not in finding_map)
-        cat_fail  = len(cat_checks) - cat_pass
-        sec_class = "section-fail" if any(
-            finding_map[c.name].severity == Severity.ERROR
-            for c in cat_checks if c.name in finding_map
-        ) else "section-warn" if cat_fail else "section-ok"
+        cat_pass = sum(1 for c in cat_checks if c.name not in finding_map)
+        cat_fail = len(cat_checks) - cat_pass
+        sec_class = (
+            "section-fail"
+            if any(
+                finding_map[c.name].severity == Severity.ERROR
+                for c in cat_checks
+                if c.name in finding_map
+            )
+            else "section-warn"
+            if cat_fail
+            else "section-ok"
+        )
         sections_html += f"""
         <section class="{sec_class}">
           <h2>{cat_labels[cat]}
@@ -390,18 +415,18 @@ def generate_html_report(
 </header>
 
 <div class="overall-banner {overall_class}">
-  {'&#10003;' if overall_class == 'ok' else '&#9888;'}&nbsp; {overall_label} &mdash;
+  {"&#10003;" if overall_class == "ok" else "&#9888;"}&nbsp; {overall_label} &mdash;
   {total_pass} of {total_checks} checks passing
-  {f', {total_errors} error(s)' if total_errors else ''}
-  {f', {total_warnings} warning(s)' if total_warnings else ''}
+  {f", {total_errors} error(s)" if total_errors else ""}
+  {f", {total_warnings} warning(s)" if total_warnings else ""}
 </div>
 
 <div class="summary-cards">
   <div class="card neutral"><div class="val">{total_checks}</div><div class="lbl">Total Checks</div></div>
   <div class="card ok"><div class="val">{total_pass}</div><div class="lbl">Passed</div></div>
-  <div class="card {'fail' if total_errors else 'ok'}"><div class="val">{total_errors}</div><div class="lbl">Failed (Error)</div></div>
-  <div class="card {'warn' if total_warnings else 'ok'}"><div class="val">{total_warnings}</div><div class="lbl">Failed (Warning)</div></div>
-  <div class="card {'fail' if total_rows else 'ok'}"><div class="val">{total_rows:,}</div><div class="lbl">Violating Rows</div></div>
+  <div class="card {"fail" if total_errors else "ok"}"><div class="val">{total_errors}</div><div class="lbl">Failed (Error)</div></div>
+  <div class="card {"warn" if total_warnings else "ok"}"><div class="val">{total_warnings}</div><div class="lbl">Failed (Warning)</div></div>
+  <div class="card {"fail" if total_rows else "ok"}"><div class="val">{total_rows:,}</div><div class="lbl">Violating Rows</div></div>
 </div>
 
 {sections_html}

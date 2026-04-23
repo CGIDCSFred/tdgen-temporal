@@ -13,8 +13,7 @@ import sys
 from datetime import date, timedelta
 from pathlib import Path
 
-
-DEFAULT_DB     = Path("output/state.db")
+DEFAULT_DB = Path("output/state.db")
 DEFAULT_CONFIG = Path("config/scenario.yaml")
 DEFAULT_OUTPUT = Path("output")
 
@@ -28,22 +27,22 @@ def main() -> int:
 
     # -- init --
     p_init = sub.add_parser("init", help="Seed Day 0 population")
-    p_init.add_argument("--db",     type=Path, default=DEFAULT_DB)
-    p_init.add_argument("--date",   type=str,  default=None, help="Simulation start date YYYY-MM-DD")
+    p_init.add_argument("--db", type=Path, default=DEFAULT_DB)
+    p_init.add_argument("--date", type=str, default=None, help="Simulation start date YYYY-MM-DD")
     p_init.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
 
     # -- advance --
     p_adv = sub.add_parser("advance", help="Advance simulation by N days")
-    p_adv.add_argument("--db",     type=Path, default=DEFAULT_DB)
-    p_adv.add_argument("--days",   type=int,  default=1)
+    p_adv.add_argument("--db", type=Path, default=DEFAULT_DB)
+    p_adv.add_argument("--days", type=int, default=1)
     p_adv.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     p_adv.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
 
     # -- backfill --
     p_bf = sub.add_parser("backfill", help="Generate data for a historical date range")
-    p_bf.add_argument("--from",   dest="from_date", type=str, required=True)
-    p_bf.add_argument("--to",     dest="to_date",   type=str, required=True)
-    p_bf.add_argument("--db",     type=Path, default=DEFAULT_DB)
+    p_bf.add_argument("--from", dest="from_date", type=str, required=True)
+    p_bf.add_argument("--to", dest="to_date", type=str, required=True)
+    p_bf.add_argument("--db", type=Path, default=DEFAULT_DB)
     p_bf.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     p_bf.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
 
@@ -53,12 +52,20 @@ def main() -> int:
 
     # -- validate --
     p_val = sub.add_parser("validate", help="Check referential, temporal, and state integrity")
-    p_val.add_argument("--db",      type=Path, default=DEFAULT_DB)
+    p_val.add_argument("--db", type=Path, default=DEFAULT_DB)
     p_val.add_argument("--verbose", action="store_true", help="Show example PKs for each finding")
-    p_val.add_argument("--errors-only", action="store_true", dest="errors_only",
-                       help="Only report ERROR severity findings")
-    p_val.add_argument("--output", type=Path, default=None,
-                       help="Write an HTML report to this file (e.g. report.html)")
+    p_val.add_argument(
+        "--errors-only",
+        action="store_true",
+        dest="errors_only",
+        help="Only report ERROR severity findings",
+    )
+    p_val.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Write an HTML report to this file (e.g. report.html)",
+    )
 
     args = parser.parse_args()
 
@@ -77,6 +84,7 @@ def main() -> int:
 
 def _cmd_init(args) -> int:
     from tdgen_temporal.engine.init_runner import run_init
+
     run_date = date.fromisoformat(args.date) if args.date else date.today()
     run_init(db_path=args.db, config_path=args.config, run_date=run_date)
     return 0
@@ -84,17 +92,19 @@ def _cmd_init(args) -> int:
 
 def _cmd_advance(args) -> int:
     import random
+
     import yaml
+
     from tdgen_temporal.db.state_store import StateStore
     from tdgen_temporal.engine.daily_runner import DailyRunner
     from tdgen_temporal.generators.field_generators import make_faker
 
     config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
-    seed   = config.get("simulation", {}).get("seed", 42)
-    fake   = make_faker(seed)
-    rng    = random.Random(seed)
+    seed = config.get("simulation", {}).get("seed", 42)
+    fake = make_faker(seed)
+    rng = random.Random(seed)
 
-    store  = StateStore(args.db)
+    store = StateStore(args.db)
     runner = DailyRunner(store, config, args.output, fake, rng)
 
     current_date = store.get_current_run_date()
@@ -103,9 +113,9 @@ def _cmd_advance(args) -> int:
         store.close()
         return 1
 
-    for i in range(args.days):
+    for _ in range(args.days):
         next_date = current_date + timedelta(days=1)
-        result    = runner.run(next_date)
+        result = runner.run(next_date)
         current_date = next_date
         ins_total = sum(result.inserts.values())
         upd_total = sum(result.updates.values())
@@ -127,7 +137,7 @@ def _cmd_backfill(args) -> int:
     from tdgen_temporal.engine.backfill_runner import run_backfill
 
     from_date = date.fromisoformat(args.from_date)
-    to_date   = date.fromisoformat(args.to_date)
+    to_date = date.fromisoformat(args.to_date)
 
     if to_date < from_date:
         print("ERROR: --to date must be >= --from date")
@@ -155,14 +165,14 @@ def _cmd_status(args) -> int:
         return 1
 
     store = StateStore(args.db)
-    meta  = store.get_simulation_meta()
+    meta = store.get_simulation_meta()
 
     if meta is None:
         print("Database exists but has not been initialised.")
         store.close()
         return 0
 
-    print(f"\nSimulation Status")
+    print("\nSimulation Status")
     print(f"{'=' * 50}")
     print(f"  Current date : {meta['current_run_date']}")
     print(f"  Total runs   : {meta['total_runs']}")
@@ -172,11 +182,24 @@ def _cmd_status(args) -> int:
 
     W = 36
     print(f"  {'Table':<{W}} {'Rows':>8}")
-    print(f"  {'-'*W}  {'--------'}")
-    for tbl in ["CLIENT", "PROVIDER", "PRODUCT_DEFINITION", "MERCHANT",
-                "ACCOUNT", "CUSTOMER", "CARD", "AUTHORIZATION", "TRANSACTION",
-                "STATEMENT", "DISPUTE", "CHARGEBACK", "FRAUD_ALERT",
-                "SCORE_RECORD", "COLLECTION_CASE"]:
+    print(f"  {'-' * W}  {'--------'}")
+    for tbl in [
+        "CLIENT",
+        "PROVIDER",
+        "PRODUCT_DEFINITION",
+        "MERCHANT",
+        "ACCOUNT",
+        "CUSTOMER",
+        "CARD",
+        "AUTHORIZATION",
+        "TRANSACTION",
+        "STATEMENT",
+        "DISPUTE",
+        "CHARGEBACK",
+        "FRAUD_ALERT",
+        "SCORE_RECORD",
+        "COLLECTION_CASE",
+    ]:
         n = store.count(tbl)
         print(f"  {tbl:<{W}} {n:>8,}")
     store.close()
@@ -184,7 +207,7 @@ def _cmd_status(args) -> int:
 
 
 def _cmd_validate(args) -> int:
-    from tdgen_temporal.validators import run_all, print_report
+    from tdgen_temporal.validators import print_report, run_all
     from tdgen_temporal.validators.results import Severity, generate_html_report
 
     if not args.db.exists():
@@ -195,7 +218,7 @@ def _cmd_validate(args) -> int:
     checks, findings = run_all(args.db)
 
     if args.errors_only:
-        checks   = [c for c in checks   if c.severity == Severity.ERROR]
+        checks = [c for c in checks if c.severity == Severity.ERROR]
         findings = [f for f in findings if f.severity == Severity.ERROR]
 
     print_report(checks, findings, verbose=args.verbose)

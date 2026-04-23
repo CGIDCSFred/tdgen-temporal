@@ -2,16 +2,15 @@
 Backfill runner — calls DailyRunner in a loop over a date range.
 """
 
+import random
 from datetime import date, timedelta
 from pathlib import Path
 
 import yaml
-from faker import Faker
 
 from tdgen_temporal.db.state_store import StateStore
 from tdgen_temporal.engine.daily_runner import DailyRunner
 from tdgen_temporal.generators.field_generators import make_faker
-import random
 
 
 def run_backfill(
@@ -22,14 +21,14 @@ def run_backfill(
     output_root: Path,
 ) -> dict:
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    seed   = config.get("simulation", {}).get("seed", 42)
-    fake   = make_faker(seed)
-    rng    = random.Random(seed)
+    seed = config.get("simulation", {}).get("seed", 42)
+    fake = make_faker(seed)
+    rng = random.Random(seed)
 
-    store  = StateStore(db_path)
+    store = StateStore(db_path)
     runner = DailyRunner(store, config, output_root, fake, rng)
 
-    total_days   = 0
+    total_days = 0
     total_inserts: dict[str, int] = {}
     total_updates: dict[str, int] = {}
 
@@ -47,8 +46,8 @@ def run_backfill(
 
     store.close()
     return {
-        "from_date":     from_date.isoformat(),
-        "to_date":       to_date.isoformat(),
+        "from_date": from_date.isoformat(),
+        "to_date": to_date.isoformat(),
         "days_processed": total_days,
         "total_inserts": total_inserts,
         "total_updates": total_updates,

@@ -4,14 +4,12 @@ States: ACTIVE -> BLOCKED -> CANCELLED | EXPIRED
 """
 
 import random
-from datetime import date, timedelta
+from datetime import date
 
-from tdgen_temporal.state_machines.base import AdvanceResult, SideEffect, StateMachine
-from tdgen_temporal.generators.field_generators import generate_card_number, expiry_date_from_today
+from tdgen_temporal.state_machines.base import AdvanceResult, StateMachine
 
 
 class CardStateMachine(StateMachine):
-
     def advance(
         self,
         entity_row: dict,
@@ -19,7 +17,7 @@ class CardStateMachine(StateMachine):
         config: dict,
         rng: random.Random,
     ) -> AdvanceResult:
-        row     = dict(entity_row)
+        row = dict(entity_row)
         changed = []
         new_rows: dict[str, list[dict]] = {}
 
@@ -42,14 +40,16 @@ class CardStateMachine(StateMachine):
                     row["replacement_issued"] = 1
                     changed.append("replacement_issued")
                     # New card row will be created by DailyRunner using this signal
-                    new_rows["CARD_REPLACEMENT"] = [{
-                        "_account_id":      row["account_id"],
-                        "_cardholder_name": row.get("cardholder_name", ""),
-                        "_replaced_card_id": row["card_id"],
-                    }]
+                    new_rows["CARD_REPLACEMENT"] = [
+                        {
+                            "_account_id": row["account_id"],
+                            "_cardholder_name": row.get("cardholder_name", ""),
+                            "_replaced_card_id": row["card_id"],
+                        }
+                    ]
 
         row["current_state"] = state
-        row["as_of_date"]    = run_date.isoformat()
+        row["as_of_date"] = run_date.isoformat()
 
         return AdvanceResult(
             updated_row=row,

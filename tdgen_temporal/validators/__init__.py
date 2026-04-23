@@ -9,7 +9,7 @@ Usage:
 import sqlite3
 from pathlib import Path
 
-from tdgen_temporal.validators import referential, temporal, state
+from tdgen_temporal.validators import referential, state, temporal
 from tdgen_temporal.validators.results import Check, Finding, Severity, print_report
 
 ALL_CHECKS: list[Check] = referential.CHECKS + temporal.CHECKS + state.CHECKS

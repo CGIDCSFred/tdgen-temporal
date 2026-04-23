@@ -6,7 +6,6 @@ Uses CREATE TABLE IF NOT EXISTS; safe to call on an existing DB.
 import sqlite3
 from pathlib import Path
 
-
 _DDL = [
     # ── Simulation control ─────────────────────────────────────────────────
     """
@@ -37,7 +36,6 @@ _DDL = [
         next_id     INTEGER NOT NULL DEFAULT 1
     )
     """,
-
     # ── REF tables ─────────────────────────────────────────────────────────
     """
     CREATE TABLE IF NOT EXISTS REF_ACCOUNT_STATUS (
@@ -163,7 +161,6 @@ _DDL = [
         applicable_regulations TEXT
     )
     """,
-
     # ── Core entity tables ─────────────────────────────────────────────────
     """
     CREATE TABLE IF NOT EXISTS CLIENT (
@@ -452,7 +449,6 @@ _DDL = [
         chargeoff_date      TEXT
     )
     """,
-
     # ── Temporal state tables (simulation-internal) ─────────────────────────
     """
     CREATE TABLE IF NOT EXISTS account_temporal_state (

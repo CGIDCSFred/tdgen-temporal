@@ -27,16 +27,18 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
 
-import yaml
 from faker import Faker
 
 from tdgen_temporal.db.state_store import StateStore
 from tdgen_temporal.generators.field_generators import (
-    expiry_date_from_today, generate_card_number, make_faker,
+    expiry_date_from_today,
+    generate_card_number,
 )
 from tdgen_temporal.generators.statement import generate_statements
 from tdgen_temporal.generators.transaction import (
-    generate_daily_transactions, generate_new_disputes, generate_new_fraud_alerts,
+    generate_daily_transactions,
+    generate_new_disputes,
+    generate_new_fraud_alerts,
 )
 from tdgen_temporal.output.delta_writer import DeltaSet, DeltaWriter
 from tdgen_temporal.output.snapshot_writer import SnapshotWriter
@@ -51,12 +53,12 @@ from tdgen_temporal.state_machines.score_record import ScoreRecordStateMachine
 
 @dataclass
 class DayResult:
-    run_date:   date
-    run_id:     str
-    inserts:    dict[str, int] = field(default_factory=dict)
-    updates:    dict[str, int] = field(default_factory=dict)
-    duration:   float = 0.0
-    errors:     list[str] = field(default_factory=list)
+    run_date: date
+    run_id: str
+    inserts: dict[str, int] = field(default_factory=dict)
+    updates: dict[str, int] = field(default_factory=dict)
+    duration: float = 0.0
+    errors: list[str] = field(default_factory=list)
 
 
 class DailyRunner:
@@ -68,26 +70,26 @@ class DailyRunner:
         fake: Faker,
         rng: random.Random,
     ) -> None:
-        self._store  = store
+        self._store = store
         self._config = config
-        self._out    = output_root
-        self._fake   = fake
-        self._rng    = rng
+        self._out = output_root
+        self._fake = fake
+        self._rng = rng
 
         formats = config.get("output", {}).get("formats", ["csv", "json"])
-        self._delta_writer    = DeltaWriter(output_root, formats)
+        self._delta_writer = DeltaWriter(output_root, formats)
         self._snapshot_writer = SnapshotWriter(output_root, formats)
 
-        self._sm_account    = AccountStateMachine()
-        self._sm_card       = CardStateMachine()
-        self._sm_dispute    = DisputeStateMachine()
-        self._sm_fraud      = FraudAlertStateMachine()
+        self._sm_account = AccountStateMachine()
+        self._sm_card = CardStateMachine()
+        self._sm_dispute = DisputeStateMachine()
+        self._sm_fraud = FraudAlertStateMachine()
         self._sm_chargeback = ChargebackStateMachine()
         self._sm_collection = CollectionCaseStateMachine()
-        self._sm_score      = ScoreRecordStateMachine()
+        self._sm_score = ScoreRecordStateMachine()
 
     def run(self, run_date: date) -> DayResult:
-        t0     = time.perf_counter()
+        t0 = time.perf_counter()
         run_id = str(uuid.uuid4())
         result = DayResult(run_date=run_date, run_id=run_id)
 
@@ -95,10 +97,10 @@ class DailyRunner:
         updates: dict[str, list[dict]] = {}
         side_effects = []
 
-        store   = self._store
-        config  = self._config
-        fake    = self._fake
-        rng     = self._rng
+        store = self._store
+        config = self._config
+        fake = self._fake
+        rng = self._rng
 
         # 1. Load accounts
         accounts = store.get_active_accounts()
@@ -112,17 +114,19 @@ class DailyRunner:
             res = self._sm_account.advance(acc, run_date, config, rng)
             row = res.updated_row
             acc_updates.append(row)
-            temp_updates.append({
-                "account_id":                   row["account_id"],
-                "current_state":                row.get("current_state", "ACTIVE"),
-                "days_delinquent":              row.get("days_delinquent", 0),
-                "consecutive_missed_payments":  row.get("consecutive_missed_payments", 0),
-                "last_payment_date":            row.get("last_payment_date"),
-                "last_statement_date":          row.get("last_statement_date"),
-                "payment_due_date":             row.get("payment_due_date"),
-                "cycle_day":                    row.get("cycle_day", 15),
-                "as_of_date":                   run_date.isoformat(),
-            })
+            temp_updates.append(
+                {
+                    "account_id": row["account_id"],
+                    "current_state": row.get("current_state", "ACTIVE"),
+                    "days_delinquent": row.get("days_delinquent", 0),
+                    "consecutive_missed_payments": row.get("consecutive_missed_payments", 0),
+                    "last_payment_date": row.get("last_payment_date"),
+                    "last_statement_date": row.get("last_statement_date"),
+                    "payment_due_date": row.get("payment_due_date"),
+                    "cycle_day": row.get("cycle_day", 15),
+                    "as_of_date": run_date.isoformat(),
+                }
+            )
             side_effects.extend(res.side_effects)
 
             # Open collection case if newly delinquent and no open case
@@ -134,23 +138,25 @@ class DailyRunner:
                 )
                 if not existing:
                     case_id = store.next_id("COLLECTION_CASE")
-                    new_collection_cases.append({
-                        "case_id":           case_id,
-                        "account_id":        row["account_id"],
-                        "case_opened_date":  run_date.isoformat(),
-                        "delinquency_bucket": "B1",
-                        "amount_past_due":   float(row.get("payment_due_amount") or 0),
-                        "total_owed":        float(row.get("current_balance") or 0),
-                        "case_status":       "ACTIVE",
-                        "assigned_collector": None,
-                        "contact_method":    rng.choice(["phone", "email", "letter"]),
-                        "last_contact_date": None,
-                        "next_action_date":  (run_date + timedelta(days=3)).isoformat(),
-                        "next_action":       "initial_contact",
-                        "recovered_amount":  0,
-                        "chargeoff_reason":  None,
-                        "chargeoff_date":    None,
-                    })
+                    new_collection_cases.append(
+                        {
+                            "case_id": case_id,
+                            "account_id": row["account_id"],
+                            "case_opened_date": run_date.isoformat(),
+                            "delinquency_bucket": "B1",
+                            "amount_past_due": float(row.get("payment_due_amount") or 0),
+                            "total_owed": float(row.get("current_balance") or 0),
+                            "case_status": "ACTIVE",
+                            "assigned_collector": None,
+                            "contact_method": rng.choice(["phone", "email", "letter"]),
+                            "last_contact_date": None,
+                            "next_action_date": (run_date + timedelta(days=3)).isoformat(),
+                            "next_action": "initial_contact",
+                            "recovered_amount": 0,
+                            "chargeoff_reason": None,
+                            "chargeoff_date": None,
+                        }
+                    )
 
         updates["ACCOUNT"] = acc_updates
         store.bulk_upsert("account_temporal_state", temp_updates)
@@ -159,8 +165,8 @@ class DailyRunner:
         all_cards = store.fetch_all("CARD", "card_status = 'ACTIVE'")
         card_temporal = store.fetch_all("card_temporal_state")
         card_temp_map = {r["card_id"]: r for r in card_temporal}
-        card_updates  = []
-        new_cards     = []
+        card_updates = []
+        new_cards = []
 
         for card in all_cards:
             ctemp = card_temp_map.get(card["card_id"], {})
@@ -171,24 +177,26 @@ class DailyRunner:
             if "CARD_REPLACEMENT" in res.new_rows:
                 for spec in res.new_rows["CARD_REPLACEMENT"]:
                     new_card_id = store.next_id("CARD")
-                    new_cards.append({
-                        "card_id":              new_card_id,
-                        "account_id":           spec["_account_id"],
-                        "card_number":          generate_card_number(),
-                        "card_sequence_number": 2,
-                        "cardholder_name":      spec["_cardholder_name"],
-                        "expiry_date":          expiry_date_from_today(years_ahead=3),
-                        "issue_date":           run_date.isoformat(),
-                        "card_status":          "ACTIVE",
-                        "card_type":            "primary",
-                        "chip_enabled":         1,
-                        "contactless_enabled":  1,
-                        "pin_offset":           "".join([str(rng.randint(0, 9)) for _ in range(4)]),
-                        "card_design_id":       None,
-                        "digital_wallet_token": None,
-                        "token_requestor":      None,
-                        "last_used_date":       None,
-                    })
+                    new_cards.append(
+                        {
+                            "card_id": new_card_id,
+                            "account_id": spec["_account_id"],
+                            "card_number": generate_card_number(),
+                            "card_sequence_number": 2,
+                            "cardholder_name": spec["_cardholder_name"],
+                            "expiry_date": expiry_date_from_today(years_ahead=3),
+                            "issue_date": run_date.isoformat(),
+                            "card_status": "ACTIVE",
+                            "card_type": "primary",
+                            "chip_enabled": 1,
+                            "contactless_enabled": 1,
+                            "pin_offset": "".join([str(rng.randint(0, 9)) for _ in range(4)]),
+                            "card_design_id": None,
+                            "digital_wallet_token": None,
+                            "token_requestor": None,
+                            "last_used_date": None,
+                        }
+                    )
 
         updates["CARD"] = card_updates
         if new_cards:
@@ -202,18 +210,20 @@ class DailyRunner:
             if "SCORE_RECORD" in res.new_rows:
                 for spec in res.new_rows["SCORE_RECORD"]:
                     score_id = store.next_id("SCORE_RECORD")
-                    score_inserts.append({
-                        "score_id":      score_id,
-                        "account_id":    spec["_account_id"],
-                        "score_date":    spec["_score_date"],
-                        "score_type":    spec["_score_type"],
-                        "score_value":   spec["_score_value"],
-                        "score_band":    spec["_score_band"],
-                        "model_version": spec["_model_version"],
-                        "decision":      spec["_decision"],
-                        "action_code":   spec["_action_code"],
-                        "result_code":   spec["_result_code"],
-                    })
+                    score_inserts.append(
+                        {
+                            "score_id": score_id,
+                            "account_id": spec["_account_id"],
+                            "score_date": spec["_score_date"],
+                            "score_type": spec["_score_type"],
+                            "score_value": spec["_score_value"],
+                            "score_band": spec["_score_band"],
+                            "model_version": spec["_model_version"],
+                            "decision": spec["_decision"],
+                            "action_code": spec["_action_code"],
+                            "result_code": spec["_result_code"],
+                        }
+                    )
         if score_inserts:
             inserts["SCORE_RECORD"] = score_inserts
             store.bulk_insert("SCORE_RECORD", score_inserts)
@@ -248,13 +258,16 @@ class DailyRunner:
             inserts["DISPUTE"] = disputes
             store.bulk_insert("DISPUTE", disputes)
             # Seed dispute temporal state
-            d_temps = [{
-                "dispute_id":    d["dispute_id"],
-                "current_state": "OPEN",
-                "days_open":     0,
-                "resolved_date": None,
-                "as_of_date":    run_date.isoformat(),
-            } for d in disputes]
+            d_temps = [
+                {
+                    "dispute_id": d["dispute_id"],
+                    "current_state": "OPEN",
+                    "days_open": 0,
+                    "resolved_date": None,
+                    "as_of_date": run_date.isoformat(),
+                }
+                for d in disputes
+            ]
             store.bulk_upsert("dispute_temporal_state", d_temps)
 
         # 8. New fraud alerts
@@ -262,48 +275,55 @@ class DailyRunner:
         if fraud_alerts:
             inserts["FRAUD_ALERT"] = fraud_alerts
             store.bulk_insert("FRAUD_ALERT", fraud_alerts)
-            fa_temps = [{
-                "alert_id":     a["alert_id"],
-                "current_state": "OPEN",
-                "days_open":     0,
-                "reviewed_date": None,
-                "as_of_date":    run_date.isoformat(),
-            } for a in fraud_alerts]
+            fa_temps = [
+                {
+                    "alert_id": a["alert_id"],
+                    "current_state": "OPEN",
+                    "days_open": 0,
+                    "reviewed_date": None,
+                    "as_of_date": run_date.isoformat(),
+                }
+                for a in fraud_alerts
+            ]
             store.bulk_upsert("fraud_alert_temporal_state", fa_temps)
 
         # 9. Advance open disputes
-        open_disputes  = store.get_active_disputes()
-        d_updates      = []
+        open_disputes = store.get_active_disputes()
+        d_updates = []
         d_temp_updates = []
         new_chargebacks = []
 
         for disp in open_disputes:
             res = self._sm_dispute.advance(disp, run_date, config, rng)
             d_updates.append(res.updated_row)
-            d_temp_updates.append({
-                "dispute_id":    disp["dispute_id"],
-                "current_state": res.updated_row.get("temporal_state", "OPEN"),
-                "days_open":     res.updated_row.get("days_open", 0),
-                "resolved_date": res.updated_row.get("resolved_date"),
-                "as_of_date":    run_date.isoformat(),
-            })
+            d_temp_updates.append(
+                {
+                    "dispute_id": disp["dispute_id"],
+                    "current_state": res.updated_row.get("temporal_state", "OPEN"),
+                    "days_open": res.updated_row.get("days_open", 0),
+                    "resolved_date": res.updated_row.get("resolved_date"),
+                    "as_of_date": run_date.isoformat(),
+                }
+            )
             side_effects.extend(res.side_effects)
             if "CHARGEBACK" in res.new_rows:
                 for spec in res.new_rows["CHARGEBACK"]:
                     cb_id = store.next_id("CHARGEBACK")
-                    new_chargebacks.append({
-                        "chargeback_id":        cb_id,
-                        "dispute_id":           spec["_dispute_id"],
-                        "transaction_id":       spec["_transaction_id"],
-                        "chargeback_date":      spec["_chargeback_date"],
-                        "chargeback_amount":    spec["_chargeback_amount"],
-                        "chargeback_reason_code": fake.bothify("CB-###"),
-                        "chargeback_stage":     spec["_initial_stage"],
-                        "representment_status": "none",
-                        "representment_date":   None,
-                        "recovered_amount":     0,
-                        "network_case_id":      fake.bothify("NET-########"),
-                    })
+                    new_chargebacks.append(
+                        {
+                            "chargeback_id": cb_id,
+                            "dispute_id": spec["_dispute_id"],
+                            "transaction_id": spec["_transaction_id"],
+                            "chargeback_date": spec["_chargeback_date"],
+                            "chargeback_amount": spec["_chargeback_amount"],
+                            "chargeback_reason_code": fake.bothify("CB-###"),
+                            "chargeback_stage": spec["_initial_stage"],
+                            "representment_status": "none",
+                            "representment_date": None,
+                            "recovered_amount": 0,
+                            "network_case_id": fake.bothify("NET-########"),
+                        }
+                    )
 
         if d_updates:
             updates["DISPUTE"] = d_updates
@@ -311,79 +331,91 @@ class DailyRunner:
         if new_chargebacks:
             inserts["CHARGEBACK"] = new_chargebacks
             store.bulk_insert("CHARGEBACK", new_chargebacks)
-            cb_temps = [{
-                "chargeback_id": cb["chargeback_id"],
-                "current_state": "FIRST_CHARGEBACK",
-                "days_open":     0,
-                "as_of_date":    run_date.isoformat(),
-            } for cb in new_chargebacks]
+            cb_temps = [
+                {
+                    "chargeback_id": cb["chargeback_id"],
+                    "current_state": "FIRST_CHARGEBACK",
+                    "days_open": 0,
+                    "as_of_date": run_date.isoformat(),
+                }
+                for cb in new_chargebacks
+            ]
             store.bulk_upsert("chargeback_temporal_state", cb_temps)
 
         # 10. Advance open fraud alerts
-        open_alerts   = store.get_active_fraud_alerts()
-        fa_updates    = []
-        fa_temp_upds  = []
+        open_alerts = store.get_active_fraud_alerts()
+        fa_updates = []
+        fa_temp_upds = []
         for alert in open_alerts:
             res = self._sm_fraud.advance(alert, run_date, config, rng)
             fa_updates.append(res.updated_row)
-            fa_temp_upds.append({
-                "alert_id":      alert["alert_id"],
-                "current_state": res.updated_row.get("temporal_state", "OPEN"),
-                "days_open":     res.updated_row.get("days_open", 0),
-                "reviewed_date": res.updated_row.get("resolved_date"),
-                "as_of_date":    run_date.isoformat(),
-            })
+            fa_temp_upds.append(
+                {
+                    "alert_id": alert["alert_id"],
+                    "current_state": res.updated_row.get("temporal_state", "OPEN"),
+                    "days_open": res.updated_row.get("days_open", 0),
+                    "reviewed_date": res.updated_row.get("resolved_date"),
+                    "as_of_date": run_date.isoformat(),
+                }
+            )
             side_effects.extend(res.side_effects)
         if fa_updates:
             updates["FRAUD_ALERT"] = fa_updates
         store.bulk_upsert("fraud_alert_temporal_state", fa_temp_upds)
 
         # 11. Advance open chargebacks
-        open_cbs   = store.get_active_chargebacks()
+        open_cbs = store.get_active_chargebacks()
         cb_updates = []
-        cb_temp_u  = []
+        cb_temp_u = []
         for cb in open_cbs:
             res = self._sm_chargeback.advance(cb, run_date, config, rng)
             cb_updates.append(res.updated_row)
-            cb_temp_u.append({
-                "chargeback_id": cb["chargeback_id"],
-                "current_state": res.updated_row.get("temporal_state", "FIRST_CHARGEBACK"),
-                "days_open":     res.updated_row.get("days_open", 0),
-                "as_of_date":    run_date.isoformat(),
-            })
+            cb_temp_u.append(
+                {
+                    "chargeback_id": cb["chargeback_id"],
+                    "current_state": res.updated_row.get("temporal_state", "FIRST_CHARGEBACK"),
+                    "days_open": res.updated_row.get("days_open", 0),
+                    "as_of_date": run_date.isoformat(),
+                }
+            )
         if cb_updates:
             updates["CHARGEBACK"] = cb_updates
         store.bulk_upsert("chargeback_temporal_state", cb_temp_u)
 
         # 12. Advance collection cases
-        open_cases   = store.get_active_collection_cases()
-        cc_updates   = []
-        cc_temp_u    = []
+        open_cases = store.get_active_collection_cases()
+        cc_updates = []
+        cc_temp_u = []
         # Enrich with days_delinquent from account
         acc_del_map = {a["account_id"]: a.get("days_delinquent", 0) for a in acc_updates}
         for case in open_cases:
             case["days_delinquent"] = acc_del_map.get(case["account_id"], 0)
             res = self._sm_collection.advance(case, run_date, config, rng)
             cc_updates.append(res.updated_row)
-            cc_temp_u.append({
-                "case_id":       case["case_id"],
-                "current_state": res.updated_row.get("current_state", "ACTIVE"),
-                "current_bucket": res.updated_row.get("current_bucket", "B1"),
-                "days_in_bucket": res.updated_row.get("days_in_bucket", 0),
-                "as_of_date":    run_date.isoformat(),
-            })
+            cc_temp_u.append(
+                {
+                    "case_id": case["case_id"],
+                    "current_state": res.updated_row.get("current_state", "ACTIVE"),
+                    "current_bucket": res.updated_row.get("current_bucket", "B1"),
+                    "days_in_bucket": res.updated_row.get("days_in_bucket", 0),
+                    "as_of_date": run_date.isoformat(),
+                }
+            )
 
         # Add new collection cases
         if new_collection_cases:
             inserts["COLLECTION_CASE"] = new_collection_cases
             store.bulk_insert("COLLECTION_CASE", new_collection_cases)
-            cc_init_temps = [{
-                "case_id":       c["case_id"],
-                "current_state": "ACTIVE",
-                "current_bucket": "B1",
-                "days_in_bucket": 0,
-                "as_of_date":    run_date.isoformat(),
-            } for c in new_collection_cases]
+            cc_init_temps = [
+                {
+                    "case_id": c["case_id"],
+                    "current_state": "ACTIVE",
+                    "current_bucket": "B1",
+                    "days_in_bucket": 0,
+                    "as_of_date": run_date.isoformat(),
+                }
+                for c in new_collection_cases
+            ]
             store.bulk_upsert("collection_case_temporal_state", cc_init_temps)
 
         if cc_updates:
@@ -403,7 +435,7 @@ class DailyRunner:
         for se in side_effects:
             if se.table == "CARD" and "card_status" in se.updates:
                 store._conn.execute(
-                    'UPDATE "CARD" SET card_status = ? WHERE account_id = ? AND card_status = \'ACTIVE\'',
+                    "UPDATE \"CARD\" SET card_status = ? WHERE account_id = ? AND card_status = 'ACTIVE'",
                     (se.updates["card_status"], se.pk_val),
                 )
                 store._conn.commit()
@@ -411,53 +443,78 @@ class DailyRunner:
         # 14. Persist account updates
         for acc_row in acc_updates:
             acc_id = acc_row["account_id"]
-            store.update_row("ACCOUNT", "account_id", acc_id, {
-                "current_balance":      acc_row.get("current_balance"),
-                "available_credit":     acc_row.get("available_credit"),
-                "account_status":       acc_row.get("account_status"),
-                "days_delinquent":      acc_row.get("days_delinquent"),
-                "payment_due_date":     acc_row.get("payment_due_date"),
-                "last_payment_date":    acc_row.get("last_payment_date"),
-                "last_payment_amount":  acc_row.get("last_payment_amount"),
-                "last_monetary_date":   acc_row.get("last_monetary_date"),
-                "risk_score":           acc_row.get("risk_score"),
-            })
+            store.update_row(
+                "ACCOUNT",
+                "account_id",
+                acc_id,
+                {
+                    "current_balance": acc_row.get("current_balance"),
+                    "available_credit": acc_row.get("available_credit"),
+                    "account_status": acc_row.get("account_status"),
+                    "days_delinquent": acc_row.get("days_delinquent"),
+                    "payment_due_date": acc_row.get("payment_due_date"),
+                    "last_payment_date": acc_row.get("last_payment_date"),
+                    "last_payment_amount": acc_row.get("last_payment_amount"),
+                    "last_monetary_date": acc_row.get("last_monetary_date"),
+                    "risk_score": acc_row.get("risk_score"),
+                },
+            )
 
         # Persist dispute updates
         for d_row in d_updates:
-            store.update_row("DISPUTE", "dispute_id", d_row["dispute_id"], {
-                "dispute_status": d_row.get("dispute_status"),
-                "resolution":     d_row.get("resolution"),
-                "resolved_date":  d_row.get("resolved_date"),
-            })
+            store.update_row(
+                "DISPUTE",
+                "dispute_id",
+                d_row["dispute_id"],
+                {
+                    "dispute_status": d_row.get("dispute_status"),
+                    "resolution": d_row.get("resolution"),
+                    "resolved_date": d_row.get("resolved_date"),
+                },
+            )
 
         # Persist fraud alert updates
         for fa_row in fa_updates:
-            store.update_row("FRAUD_ALERT", "alert_id", fa_row["alert_id"], {
-                "alert_status":  fa_row.get("alert_status"),
-                "action_taken":  fa_row.get("action_taken"),
-                "resolved_date": fa_row.get("resolved_date"),
-            })
+            store.update_row(
+                "FRAUD_ALERT",
+                "alert_id",
+                fa_row["alert_id"],
+                {
+                    "alert_status": fa_row.get("alert_status"),
+                    "action_taken": fa_row.get("action_taken"),
+                    "resolved_date": fa_row.get("resolved_date"),
+                },
+            )
 
         # Persist chargeback updates
         for cb_row in cb_updates:
-            store.update_row("CHARGEBACK", "chargeback_id", cb_row["chargeback_id"], {
-                "chargeback_stage":     cb_row.get("chargeback_stage"),
-                "representment_status": cb_row.get("representment_status"),
-                "representment_date":   cb_row.get("representment_date"),
-                "recovered_amount":     cb_row.get("recovered_amount"),
-            })
+            store.update_row(
+                "CHARGEBACK",
+                "chargeback_id",
+                cb_row["chargeback_id"],
+                {
+                    "chargeback_stage": cb_row.get("chargeback_stage"),
+                    "representment_status": cb_row.get("representment_status"),
+                    "representment_date": cb_row.get("representment_date"),
+                    "recovered_amount": cb_row.get("recovered_amount"),
+                },
+            )
 
         # Persist collection case updates
         for cc_row in cc_updates:
-            store.update_row("COLLECTION_CASE", "case_id", cc_row["case_id"], {
-                "case_status":       cc_row.get("case_status"),
-                "delinquency_bucket": cc_row.get("delinquency_bucket"),
-                "chargeoff_date":    cc_row.get("chargeoff_date"),
-                "chargeoff_reason":  cc_row.get("chargeoff_reason"),
-                "next_action":       cc_row.get("next_action"),
-                "next_action_date":  cc_row.get("next_action_date"),
-            })
+            store.update_row(
+                "COLLECTION_CASE",
+                "case_id",
+                cc_row["case_id"],
+                {
+                    "case_status": cc_row.get("case_status"),
+                    "delinquency_bucket": cc_row.get("delinquency_bucket"),
+                    "chargeoff_date": cc_row.get("chargeoff_date"),
+                    "chargeoff_reason": cc_row.get("chargeoff_reason"),
+                    "next_action": cc_row.get("next_action"),
+                    "next_action_date": cc_row.get("next_action_date"),
+                },
+            )
 
         # 15. Write delta files
         delta = DeltaSet(
@@ -483,7 +540,7 @@ class DailyRunner:
             duration=time.perf_counter() - t0,
         )
 
-        result.inserts  = {k: len(v) for k, v in inserts.items()}
-        result.updates  = {k: len(v) for k, v in updates.items()}
+        result.inserts = {k: len(v) for k, v in inserts.items()}
+        result.updates = {k: len(v) for k, v in updates.items()}
         result.duration = time.perf_counter() - t0
         return result

@@ -3,10 +3,9 @@ TDGen-Temporal — Streamlit UI
 Tabs: Configuration & Controls | Dashboard | Data Explorer | Validation
 """
 
-import json
 import subprocess
 import sys
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -16,7 +15,7 @@ import yaml
 
 # ── Project root (one level above ui/)
 ROOT = Path(__file__).parent.parent
-DEFAULT_DB     = ROOT / "output" / "state.db"
+DEFAULT_DB = ROOT / "output" / "state.db"
 DEFAULT_CONFIG = ROOT / "config" / "scenario.yaml"
 DEFAULT_OUTPUT = ROOT / "output"
 
@@ -28,19 +27,24 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.markdown("""
+st.markdown(
+    """
 <style>
     .metric-card { background:#1e293b; border-radius:8px; padding:12px 16px; }
     .stTabs [data-baseweb="tab"] { font-size:15px; padding:8px 20px; }
     .stDataFrame { font-size:13px; }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 @st.cache_data(ttl=8)
 def _query(db_str: str, sql: str, params: tuple = ()) -> pd.DataFrame:
     import sqlite3
+
     conn = sqlite3.connect(db_str)
     try:
         return pd.read_sql_query(sql, conn, params=params)
@@ -63,6 +67,7 @@ def get_meta() -> dict | None:
         return None
     try:
         import sqlite3
+
         conn = sqlite3.connect(str(db_path))
         conn.row_factory = sqlite3.Row
         row = conn.execute("SELECT * FROM simulation_meta LIMIT 1").fetchone()
@@ -93,20 +98,20 @@ with st.sidebar:
     st.title("🏦 TDGen-Temporal")
     st.divider()
 
-    db_path_str     = st.text_input("Database", value=str(DEFAULT_DB), key="sb_db")
-    config_path_str = st.text_input("Config",   value=str(DEFAULT_CONFIG), key="sb_cfg")
+    db_path_str = st.text_input("Database", value=str(DEFAULT_DB), key="sb_db")
+    config_path_str = st.text_input("Config", value=str(DEFAULT_CONFIG), key="sb_cfg")
 
-    db_path     = Path(db_path_str)
+    db_path = Path(db_path_str)
     config_path = Path(config_path_str)
 
     st.divider()
     meta = get_meta()
     if meta:
         st.metric("Simulation date", str(meta.get("current_run_date", "—")))
-        st.metric("Days simulated",  f"{meta.get('total_runs', 0):,}")
-        st.metric("Accounts",        f"{table_count('ACCOUNT'):,}")
-        st.metric("Transactions",    f"{table_count('TRANSACTION'):,}")
-        st.metric("Open disputes",   f"{table_count('DISPUTE'):,}")
+        st.metric("Days simulated", f"{meta.get('total_runs', 0):,}")
+        st.metric("Accounts", f"{table_count('ACCOUNT'):,}")
+        st.metric("Transactions", f"{table_count('TRANSACTION'):,}")
+        st.metric("Open disputes", f"{table_count('DISPUTE'):,}")
     else:
         st.info("No database yet — use **Configuration** tab to initialise.")
 
@@ -116,12 +121,14 @@ with st.sidebar:
         st.rerun()
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
-tab_cfg, tab_dash, tab_exp, tab_val = st.tabs([
-    "⚙️  Configuration",
-    "📊  Dashboard",
-    "🔍  Data Explorer",
-    "✅  Validation",
-])
+tab_cfg, tab_dash, tab_exp, tab_val = st.tabs(
+    [
+        "⚙️  Configuration",
+        "📊  Dashboard",
+        "🔍  Data Explorer",
+        "✅  Validation",
+    ]
+)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -133,7 +140,9 @@ with tab_cfg:
     # ── YAML editor
     with left:
         st.subheader("Scenario configuration")
-        yaml_text = config_path.read_text(encoding="utf-8") if config_path.exists() else "# file not found"
+        yaml_text = (
+            config_path.read_text(encoding="utf-8") if config_path.exists() else "# file not found"
+        )
         edited_yaml = st.text_area("scenario.yaml", value=yaml_text, height=460, key="yaml_editor")
 
         if st.button("💾  Save config", use_container_width=True):
@@ -156,9 +165,12 @@ with tab_cfg:
                 with st.spinner("Seeding Day 0 population…"):
                     rc, out, err = run_cli(
                         "init",
-                        "--db",     str(db_path),
-                        "--config", str(config_path),
-                        "--date",   str(init_date),
+                        "--db",
+                        str(db_path),
+                        "--config",
+                        str(config_path),
+                        "--date",
+                        str(init_date),
                     )
                 if rc == 0:
                     st.success("Done!")
@@ -177,10 +189,14 @@ with tab_cfg:
                 with st.spinner(f"Advancing {adv_days} day(s)…"):
                     rc, out, err = run_cli(
                         "advance",
-                        "--db",     str(db_path),
-                        "--config", str(config_path),
-                        "--output", str(DEFAULT_OUTPUT),
-                        "--days",   str(adv_days),
+                        "--db",
+                        str(db_path),
+                        "--config",
+                        str(config_path),
+                        "--output",
+                        str(DEFAULT_OUTPUT),
+                        "--days",
+                        str(adv_days),
                     )
                 if rc == 0:
                     st.success(f"Advanced {adv_days} day(s).")
@@ -194,7 +210,7 @@ with tab_cfg:
         # Backfill
         with st.expander("📅  Backfill date range"):
             bf_from = st.date_input("From", value=date(2024, 1, 1), key="bf_from")
-            bf_to   = st.date_input("To",   value=date(2024, 1, 31), key="bf_to")
+            bf_to = st.date_input("To", value=date(2024, 1, 31), key="bf_to")
             if st.button("Run backfill", use_container_width=True, disabled=not db_ready(db_path)):
                 if bf_to < bf_from:
                     st.error("'To' must be ≥ 'From'.")
@@ -203,11 +219,16 @@ with tab_cfg:
                     with st.spinner(f"Backfilling {n_days} days…"):
                         rc, out, err = run_cli(
                             "backfill",
-                            "--db",     str(db_path),
-                            "--config", str(config_path),
-                            "--output", str(DEFAULT_OUTPUT),
-                            "--from",   str(bf_from),
-                            "--to",     str(bf_to),
+                            "--db",
+                            str(db_path),
+                            "--config",
+                            str(config_path),
+                            "--output",
+                            str(DEFAULT_OUTPUT),
+                            "--from",
+                            str(bf_from),
+                            "--to",
+                            str(bf_to),
                         )
                     if rc == 0:
                         st.success("Backfill complete.")
@@ -221,8 +242,9 @@ with tab_cfg:
         # Reset
         with st.expander("🗑️  Reset simulation"):
             st.warning("This will delete the database and all generated output.")
-            if st.button("Reset", use_container_width=True, type="secondary",
-                         disabled=not db_ready(db_path)):
+            if st.button(
+                "Reset", use_container_width=True, type="secondary", disabled=not db_ready(db_path)
+            ):
                 db_path.unlink(missing_ok=True)
                 st.cache_data.clear()
                 st.success("Database deleted. Initialise a new simulation.")
@@ -262,13 +284,13 @@ with tab_dash:
         st.subheader("Portfolio overview")
         k = st.columns(7)
         kpi_tables = [
-            ("Accounts",       "ACCOUNT"),
-            ("Customers",      "CUSTOMER"),
-            ("Cards",          "CARD"),
-            ("Transactions",   "TRANSACTION"),
-            ("Disputes",       "DISPUTE"),
-            ("Fraud alerts",   "FRAUD_ALERT"),
-            ("Chargebacks",    "CHARGEBACK"),
+            ("Accounts", "ACCOUNT"),
+            ("Customers", "CUSTOMER"),
+            ("Cards", "CARD"),
+            ("Transactions", "TRANSACTION"),
+            ("Disputes", "DISPUTE"),
+            ("Fraud alerts", "FRAUD_ALERT"),
+            ("Chargebacks", "CHARGEBACK"),
         ]
         for col, (label, tbl) in zip(k, kpi_tables):
             col.metric(label, f"{table_count(tbl):,}")
@@ -289,7 +311,9 @@ with tab_dash:
             """)
             if not vol_df.empty:
                 fig = px.line(
-                    vol_df, x="run_date", y=["Transactions", "Authorizations"],
+                    vol_df,
+                    x="run_date",
+                    y=["Transactions", "Authorizations"],
                     labels={"value": "Count", "run_date": "Date", "variable": ""},
                     color_discrete_map={"Transactions": "#3b82f6", "Authorizations": "#10b981"},
                 )
@@ -300,10 +324,14 @@ with tab_dash:
 
         with r1b:
             st.subheader("Account status distribution")
-            acc_df = query("SELECT account_status, COUNT(*) AS n FROM ACCOUNT GROUP BY account_status")
+            acc_df = query(
+                "SELECT account_status, COUNT(*) AS n FROM ACCOUNT GROUP BY account_status"
+            )
             if not acc_df.empty:
                 fig = px.pie(
-                    acc_df, values="n", names="account_status",
+                    acc_df,
+                    values="n",
+                    names="account_status",
                     color_discrete_sequence=px.colors.qualitative.Safe,
                     hole=0.35,
                 )
@@ -315,10 +343,14 @@ with tab_dash:
 
         with r2a:
             st.subheader("Dispute status")
-            disp_df = query("SELECT dispute_status, COUNT(*) AS n FROM DISPUTE GROUP BY dispute_status")
+            disp_df = query(
+                "SELECT dispute_status, COUNT(*) AS n FROM DISPUTE GROUP BY dispute_status"
+            )
             if not disp_df.empty:
                 fig = px.bar(
-                    disp_df, x="dispute_status", y="n",
+                    disp_df,
+                    x="dispute_status",
+                    y="n",
                     color="dispute_status",
                     color_discrete_sequence=px.colors.qualitative.Pastel,
                     labels={"n": "Count", "dispute_status": ""},
@@ -330,10 +362,14 @@ with tab_dash:
 
         with r2b:
             st.subheader("Fraud alert status")
-            fraud_df = query("SELECT alert_status, COUNT(*) AS n FROM FRAUD_ALERT GROUP BY alert_status")
+            fraud_df = query(
+                "SELECT alert_status, COUNT(*) AS n FROM FRAUD_ALERT GROUP BY alert_status"
+            )
             if not fraud_df.empty:
                 fig = px.bar(
-                    fraud_df, x="alert_status", y="n",
+                    fraud_df,
+                    x="alert_status",
+                    y="n",
                     color="alert_status",
                     color_discrete_sequence=px.colors.qualitative.Antique,
                     labels={"n": "Count", "alert_status": ""},
@@ -350,8 +386,12 @@ with tab_dash:
             st.subheader("Collection cases by delinquency bucket")
             BUCKET_ORDER = ["B1", "B2", "B3", "B4", "CHARGEOFF", "RESOLVED"]
             BUCKET_COLORS = {
-                "B1": "#86efac", "B2": "#fde68a", "B3": "#fdba74",
-                "B4": "#f97316", "CHARGEOFF": "#ef4444", "RESOLVED": "#6b7280",
+                "B1": "#86efac",
+                "B2": "#fde68a",
+                "B3": "#fdba74",
+                "B4": "#f97316",
+                "CHARGEOFF": "#ef4444",
+                "RESOLVED": "#6b7280",
             }
             coll_df = query("""
                 SELECT delinquency_bucket, COUNT(*) AS n
@@ -363,7 +403,9 @@ with tab_dash:
                 )
                 coll_df = coll_df.sort_values("delinquency_bucket")
                 fig = px.bar(
-                    coll_df, x="delinquency_bucket", y="n",
+                    coll_df,
+                    x="delinquency_bucket",
+                    y="n",
                     color="delinquency_bucket",
                     color_discrete_map=BUCKET_COLORS,
                     labels={"n": "Count", "delinquency_bucket": ""},
@@ -386,7 +428,8 @@ with tab_dash:
             """)
             if not risk_df.empty:
                 fig = px.area(
-                    risk_df, x="run_date",
+                    risk_df,
+                    x="run_date",
                     y=["Disputes", "Fraud alerts", "Chargebacks", "Collection cases"],
                     labels={"value": "Count", "run_date": "Date", "variable": ""},
                 )
@@ -406,7 +449,9 @@ with tab_dash:
             """)
             if not score_df.empty:
                 fig = px.bar(
-                    score_df, x="score_band", y="n",
+                    score_df,
+                    x="score_band",
+                    y="n",
                     color="score_band",
                     color_discrete_sequence=px.colors.sequential.Blues_r,
                     labels={"n": "Count", "score_band": "Score band"},
@@ -424,7 +469,9 @@ with tab_dash:
             """)
             if not txtype_df.empty:
                 fig = px.bar(
-                    txtype_df, x="transaction_type", y="n",
+                    txtype_df,
+                    x="transaction_type",
+                    y="n",
                     color="transaction_type",
                     color_discrete_sequence=px.colors.qualitative.G10,
                     labels={"n": "Count", "transaction_type": ""},
@@ -441,22 +488,22 @@ with tab_dash:
 # ══════════════════════════════════════════════════════════════════════════════
 
 TABLES = {
-    "Accounts":         ("ACCOUNT",          "account_id"),
-    "Customers":        ("CUSTOMER",         "customer_id"),
-    "Cards":            ("CARD",             "card_id"),
-    "Transactions":     ("TRANSACTION",      "transaction_id"),
-    "Authorizations":   ("AUTHORIZATION",    "auth_id"),
-    "Statements":       ("STATEMENT",        "statement_id"),
-    "Disputes":         ("DISPUTE",          "dispute_id"),
-    "Chargebacks":      ("CHARGEBACK",       "chargeback_id"),
-    "Fraud Alerts":     ("FRAUD_ALERT",      "alert_id"),
-    "Score Records":    ("SCORE_RECORD",     "score_id"),
-    "Collection Cases": ("COLLECTION_CASE",  "case_id"),
-    "Merchants":        ("MERCHANT",         "merchant_id"),
-    "Clients":          ("CLIENT",           "client_id"),
-    "Providers":        ("PROVIDER",         "provider_id"),
-    "Products":         ("PRODUCT_DEFINITION","tsys_product_code"),
-    "Run Log":          ("run_log",          "run_id"),
+    "Accounts": ("ACCOUNT", "account_id"),
+    "Customers": ("CUSTOMER", "customer_id"),
+    "Cards": ("CARD", "card_id"),
+    "Transactions": ("TRANSACTION", "transaction_id"),
+    "Authorizations": ("AUTHORIZATION", "auth_id"),
+    "Statements": ("STATEMENT", "statement_id"),
+    "Disputes": ("DISPUTE", "dispute_id"),
+    "Chargebacks": ("CHARGEBACK", "chargeback_id"),
+    "Fraud Alerts": ("FRAUD_ALERT", "alert_id"),
+    "Score Records": ("SCORE_RECORD", "score_id"),
+    "Collection Cases": ("COLLECTION_CASE", "case_id"),
+    "Merchants": ("MERCHANT", "merchant_id"),
+    "Clients": ("CLIENT", "client_id"),
+    "Providers": ("PROVIDER", "provider_id"),
+    "Products": ("PRODUCT_DEFINITION", "tsys_product_code"),
+    "Run Log": ("run_log", "run_id"),
 }
 
 with tab_exp:
@@ -472,7 +519,9 @@ with tab_exp:
         full_df = query(f"SELECT * FROM {tbl_name}")
 
         with top_mid:
-            search = st.text_input("Search any column", placeholder="Type to filter…", key="exp_search")
+            search = st.text_input(
+                "Search any column", placeholder="Type to filter…", key="exp_search"
+            )
 
         with top_right:
             page_size = st.selectbox("Rows / page", [25, 50, 100, 250], index=1, key="exp_ps")
@@ -490,7 +539,9 @@ with tab_exp:
 
         # Pagination
         n_pages = max(1, (len(filtered) - 1) // page_size + 1)
-        page = st.number_input("Page", min_value=1, max_value=n_pages, value=1, step=1, key="exp_page")
+        page = st.number_input(
+            "Page", min_value=1, max_value=n_pages, value=1, step=1, key="exp_page"
+        )
         start = (page - 1) * page_size
         page_df = filtered.iloc[start : start + page_size].reset_index(drop=True)
 
@@ -510,9 +561,7 @@ with tab_exp:
             pk_val = row.get(pk_col, "—")
             st.subheader(f"Detail — {pk_col}: {pk_val}")
 
-            detail_df = pd.DataFrame(
-                [{"Field": k, "Value": str(v)} for k, v in row.items()]
-            )
+            detail_df = pd.DataFrame([{"Field": k, "Value": str(v)} for k, v in row.items()])
             st.dataframe(detail_df, width="stretch", hide_index=True)
 
             # Related-record drill-down
@@ -520,60 +569,86 @@ with tab_exp:
                 acc_id = row.get("account_id")
                 if acc_id:
                     with st.expander(f"Transactions ({acc_id})"):
-                        st.dataframe(query(
-                            "SELECT * FROM TRANSACTION WHERE account_id=? ORDER BY post_date DESC LIMIT 100",
-                            (acc_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query(
+                                "SELECT * FROM TRANSACTION WHERE account_id=? ORDER BY post_date DESC LIMIT 100",
+                                (acc_id,),
+                            ),
+                            width="stretch",
+                            hide_index=True,
+                        )
                     with st.expander(f"Cards ({acc_id})"):
-                        st.dataframe(query(
-                            "SELECT * FROM CARD WHERE account_id=?", (acc_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query("SELECT * FROM CARD WHERE account_id=?", (acc_id,)),
+                            width="stretch",
+                            hide_index=True,
+                        )
                     with st.expander(f"Disputes ({acc_id})"):
-                        st.dataframe(query(
-                            "SELECT * FROM DISPUTE WHERE account_id=? ORDER BY dispute_opened_date DESC",
-                            (acc_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query(
+                                "SELECT * FROM DISPUTE WHERE account_id=? ORDER BY dispute_opened_date DESC",
+                                (acc_id,),
+                            ),
+                            width="stretch",
+                            hide_index=True,
+                        )
                     with st.expander(f"Fraud Alerts ({acc_id})"):
-                        st.dataframe(query(
-                            "SELECT * FROM FRAUD_ALERT WHERE account_id=?", (acc_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query("SELECT * FROM FRAUD_ALERT WHERE account_id=?", (acc_id,)),
+                            width="stretch",
+                            hide_index=True,
+                        )
                     with st.expander(f"Collection Cases ({acc_id})"):
-                        st.dataframe(query(
-                            "SELECT * FROM COLLECTION_CASE WHERE account_id=?", (acc_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query("SELECT * FROM COLLECTION_CASE WHERE account_id=?", (acc_id,)),
+                            width="stretch",
+                            hide_index=True,
+                        )
                     with st.expander(f"Score Records ({acc_id})"):
-                        st.dataframe(query(
-                            "SELECT * FROM SCORE_RECORD WHERE account_id=? ORDER BY score_date DESC",
-                            (acc_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query(
+                                "SELECT * FROM SCORE_RECORD WHERE account_id=? ORDER BY score_date DESC",
+                                (acc_id,),
+                            ),
+                            width="stretch",
+                            hide_index=True,
+                        )
 
             elif tbl_name == "TRANSACTION":
                 txn_id = row.get("transaction_id")
                 if txn_id:
                     with st.expander(f"Disputes for transaction {txn_id}"):
-                        st.dataframe(query(
-                            "SELECT * FROM DISPUTE WHERE transaction_id=?", (txn_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query("SELECT * FROM DISPUTE WHERE transaction_id=?", (txn_id,)),
+                            width="stretch",
+                            hide_index=True,
+                        )
                     with st.expander(f"Fraud Alerts for transaction {txn_id}"):
-                        st.dataframe(query(
-                            "SELECT * FROM FRAUD_ALERT WHERE transaction_id=?", (txn_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query("SELECT * FROM FRAUD_ALERT WHERE transaction_id=?", (txn_id,)),
+                            width="stretch",
+                            hide_index=True,
+                        )
 
             elif tbl_name == "DISPUTE":
                 disp_id = row.get("dispute_id")
                 if disp_id:
                     with st.expander(f"Chargebacks for dispute {disp_id}"):
-                        st.dataframe(query(
-                            "SELECT * FROM CHARGEBACK WHERE dispute_id=?", (disp_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query("SELECT * FROM CHARGEBACK WHERE dispute_id=?", (disp_id,)),
+                            width="stretch",
+                            hide_index=True,
+                        )
 
             elif tbl_name == "CUSTOMER":
                 acc_id = row.get("account_id")
                 if acc_id:
                     with st.expander(f"Account {acc_id}"):
-                        st.dataframe(query(
-                            "SELECT * FROM ACCOUNT WHERE account_id=?", (acc_id,)
-                        ), width="stretch", hide_index=True)
+                        st.dataframe(
+                            query("SELECT * FROM ACCOUNT WHERE account_id=?", (acc_id,)),
+                            width="stretch",
+                            hide_index=True,
+                        )
 
         st.divider()
         st.download_button(
@@ -604,19 +679,20 @@ with tab_val:
             with st.spinner("Running validation suite…"):
                 cmd_args = [
                     "validate",
-                    "--db", str(db_path),
+                    "--db",
+                    str(db_path),
                 ]
                 if verbose:
                     cmd_args.append("--verbose")
                 if errors_only:
                     cmd_args.append("--errors-only")
                 rc, out, err = run_cli(*cmd_args)
-            st.session_state["val_rc"]  = rc
+            st.session_state["val_rc"] = rc
             st.session_state["val_out"] = out
             st.session_state["val_err"] = err
 
         if "val_out" in st.session_state:
-            rc  = st.session_state["val_rc"]
+            rc = st.session_state["val_rc"]
             out = st.session_state["val_out"]
             err = st.session_state["val_err"]
 
@@ -643,20 +719,22 @@ with tab_val:
 
                 # Summary counters
                 sc = st.columns(3)
-                sc[0].metric("PASS",    len(fdf[fdf.Severity == "PASS"]),    delta=None)
+                sc[0].metric("PASS", len(fdf[fdf.Severity == "PASS"]), delta=None)
                 sc[1].metric("WARNING", len(fdf[fdf.Severity == "WARNING"]), delta=None)
-                sc[2].metric("ERROR",   len(fdf[fdf.Severity == "ERROR"]),   delta=None)
+                sc[2].metric("ERROR", len(fdf[fdf.Severity == "ERROR"]), delta=None)
 
                 # Severity filter
                 sev_opts = fdf["Severity"].unique().tolist()
-                chosen = st.multiselect("Show severities", sev_opts, default=sev_opts, key="val_sev")
+                chosen = st.multiselect(
+                    "Show severities", sev_opts, default=sev_opts, key="val_sev"
+                )
                 show_df = fdf[fdf["Severity"].isin(chosen)]
 
                 def _sev_color(val: str) -> str:
                     return {
-                        "ERROR":   "color:#ef4444;font-weight:bold",
+                        "ERROR": "color:#ef4444;font-weight:bold",
                         "WARNING": "color:#f59e0b;font-weight:bold",
-                        "PASS":    "color:#22c55e",
+                        "PASS": "color:#22c55e",
                     }.get(val, "")
 
                 st.dataframe(
