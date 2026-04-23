@@ -99,13 +99,9 @@ with st.sidebar:
     st.title("🏦 TDGen-Temporal")
     st.divider()
 
-    db_path_str = st.text_input("Database", value=str(DEFAULT_DB), key="sb_db")
-    config_path_str = st.text_input("Config", value=str(DEFAULT_CONFIG), key="sb_cfg")
+    db_path = DEFAULT_DB
+    config_path = DEFAULT_CONFIG
 
-    db_path = Path(db_path_str)
-    config_path = Path(config_path_str)
-
-    st.divider()
     meta = get_meta()
     if meta:
         st.metric("Simulation date", str(meta.get("current_run_date", "—")))
