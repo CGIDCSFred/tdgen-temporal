@@ -1,41 +1,68 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# TDGen-Temporal — Scenario Configuration
+#
+# This file controls the size and behaviour of the synthetic simulation.
+# Edit the values below, save, then click "Initialise" (for a fresh run)
+# or "Advance" (to continue from the current simulation date).
+# ─────────────────────────────────────────────────────────────────────────────
+
 simulation:
-  seed: 42
-  locale: en_CA
+  seed: 42           # Random seed — change to get a different (but reproducible) dataset
+  locale: en_CA      # Faker locale for names, addresses, phone numbers
+
+  # Population seeded on Day 0 (initialisation only — re-init required to change)
   initial_population:
-    accounts: 500
-    merchants: 200
-    clients: 3
-    providers: 10
-    products: 20
+    accounts:   500  # Credit-card accounts (each gets one customer and one card)
+    merchants:  200  # Merchants used as counterparties for transactions
+    clients:      3  # Issuing clients (top-level entities)
+    providers:   10  # Portfolio providers (belong to clients)
+    products:    20  # Card products / pricing tiers
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Daily rates — govern how much activity is generated each simulated day
+# ─────────────────────────────────────────────────────────────────────────────
 rates:
-  daily_new_accounts: 0.005
-  transactions_per_account_per_day_mean: 1.8
-  transactions_per_account_per_day_stddev: 1.2
-  payment_probability: 0.65
-  fraud_rate: 0.002
-  dispute_rate: 0.003
-  chargeback_rate: 0.40
-  delinquency_rate: 0.04
-  chargeoff_rate: 0.001
-  score_refresh_day: 1
-  fraud_confirmation_rate: 0.30
-  dispute_withdrawal_rate: 0.05
+  # Transactions
+  transactions_per_account_per_day_mean:   1.8  # Average transactions per active account per day
+  transactions_per_account_per_day_stddev: 1.2  # Standard deviation around that mean
 
+  # Payments & delinquency
+  payment_probability: 0.65  # Probability (0–1) that a payment is made when due
+  delinquency_rate:    0.04  # Daily probability (0–1) that an active account misses a payment
+  chargeoff_rate:     0.001  # Daily probability (0–1) that a delinquent account is charged off
+
+  # Fraud & disputes
+  fraud_rate:              0.002  # Fraction of purchase transactions flagged as fraudulent
+  dispute_rate:            0.003  # Fraction of eligible transactions that generate a dispute
+  chargeback_rate:         0.40   # Fraction of resolved disputes that escalate to a chargeback
+  fraud_confirmation_rate: 0.30   # Fraction of fraud alerts that are confirmed (vs. false positive)
+  dispute_withdrawal_rate: 0.05   # Fraction of disputes withdrawn by the cardholder within 3 days
+
+  # Score refresh
+  score_refresh_day: 1  # Day-of-month (1–28) when credit score records are generated
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Lifecycle timings — how long each process takes (in days)
+# ─────────────────────────────────────────────────────────────────────────────
 lifecycle:
-  dispute_investigating_days: 7
-  dispute_resolution_days: 30
-  fraud_alert_review_days: 2
-  chargeback_representment_days: 10
-  collection_bucket_thresholds:
-    B1: 30
-    B2: 60
-    B3: 90
-    B4: 120
-    CHARGEOFF: 180
+  dispute_investigating_days:       7   # Days before a dispute moves from OPEN → INVESTIGATING
+  dispute_resolution_days:         30   # Maximum days before a dispute is force-closed
+  fraud_alert_review_days:          2   # Days before a fraud alert is reviewed and actioned
+  chargeback_representment_days:   10   # Days allowed for merchant representment of a chargeback
 
+  # Delinquency buckets — days past due before an account moves to the next bucket
+  collection_bucket_thresholds:
+    B1:       30   # 1–30 days past due
+    B2:       60   # 31–60 days past due
+    B3:       90   # 61–90 days past due
+    B4:      120   # 91–120 days past due
+    CHARGEOFF: 180  # 181+ days past due → charge-off eligible
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Output — controls what files are written alongside the database
+# ─────────────────────────────────────────────────────────────────────────────
 output:
-  formats:
+  formats:           # Delta files written each day (csv and/or json)
     - csv
     - json
-  write_snapshots: false
+  write_snapshots: false  # Set true to write full table snapshots each day (large)

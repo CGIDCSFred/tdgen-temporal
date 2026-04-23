@@ -135,6 +135,41 @@ tab_cfg, tab_dash, tab_exp, tab_val = st.tabs(
 # TAB 1 — Configuration & Controls
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_cfg:
+    # ── What is this tool?
+    st.markdown(
+        """
+**TDGen-Temporal** is a synthetic credit-card data generator.
+It seeds a realistic portfolio of accounts, customers, cards, and merchants, then
+advances the simulation day-by-day — producing transactions, disputes, fraud alerts,
+chargebacks, score records, and collection cases that evolve over time.
+
+Use it to build test datasets, train ML models, or explore data pipelines without
+touching production data.
+"""
+    )
+
+    with st.expander("How to get started", expanded=not db_ready(db_path)):
+        st.markdown(
+            """
+**Step 1 — Configure** (optional)
+Edit `scenario.yaml` on the left to control population size, transaction rates, and
+lifecycle timings. Click **Save config** when done.
+
+**Step 2 — Initialise**
+Open the *Initialise (Day 0)* panel on the right. Pick a start date and click
+**Initialise**. This creates the database and seeds the opening population.
+
+**Step 3 — Advance**
+Use the *Advance* panel to move the simulation forward. Enter the number of days and
+click **Advance**. Repeat as many times as you like — each run appends new rows.
+
+**Step 4 — Explore**
+Switch to the **Dashboard** tab for charts, the **Data Explorer** tab to browse and
+drill into individual records, or the **Validation** tab to check data integrity.
+"""
+        )
+
+    st.divider()
     left, right = st.columns([3, 2], gap="large")
 
     # ── YAML editor
