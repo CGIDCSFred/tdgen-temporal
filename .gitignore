@@ -14,8 +14,8 @@ build/
 *.egg
 
 # Simulation output (generated — not source-controlled)
-output/
-logs/
+/output/
+/logs/
 *.db
 *.db-shm
 *.db-wal
