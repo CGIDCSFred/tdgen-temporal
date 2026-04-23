@@ -96,9 +96,6 @@ def run_cli(*args: str) -> tuple[int, str, str]:
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.title("🏦 TDGen-Temporal")
-    st.divider()
-
     db_path = DEFAULT_DB
     config_path = DEFAULT_CONFIG
 
@@ -116,6 +113,67 @@ with st.sidebar:
     if st.button("🔄 Refresh data", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+
+# ── Banner ────────────────────────────────────────────────────────────────────
+st.markdown(
+    """
+<div style="
+    background: linear-gradient(135deg, #0a1628 0%, #0f2d4a 40%, #0a1e35 100%);
+    border: 1px solid #1e3a5f;
+    border-radius: 12px;
+    padding: 28px 36px 24px 36px;
+    margin-bottom: 8px;
+    position: relative;
+    overflow: hidden;
+">
+  <!-- Decorative background: scrolling data labels -->
+  <div style="
+      position: absolute; top: 8px; right: 24px;
+      font-family: monospace; font-size: 10px; line-height: 1.8;
+      color: #1e3a5f; user-select: none; text-align: right;
+  ">
+    ACCOUNT &nbsp;·&nbsp; CUSTOMER &nbsp;·&nbsp; CARD &nbsp;·&nbsp; MERCHANT<br>
+    AUTHORIZATION &nbsp;·&nbsp; TRANSACTION &nbsp;·&nbsp; STATEMENT<br>
+    DISPUTE &nbsp;·&nbsp; CHARGEBACK &nbsp;·&nbsp; FRAUD_ALERT<br>
+    SCORE_RECORD &nbsp;·&nbsp; COLLECTION_CASE<br>
+    0x4143 &nbsp; 0x5458 &nbsp; 0x4341 &nbsp; 0x4d52<br>
+    ████░░░░ &nbsp; ██████░░ &nbsp; ████████
+  </div>
+
+  <!-- Title -->
+  <div style="font-size: 32px; font-weight: 800; color: #f1f5f9;
+              letter-spacing: -0.5px; margin-bottom: 4px;">
+    🏦 &nbsp;TDGen&#8209;Temporal
+  </div>
+
+  <!-- Strapline -->
+  <div style="font-size: 14px; color: #64748b; font-family: monospace;
+              margin-bottom: 18px; letter-spacing: 0.5px;">
+    SYNTHETIC CREDIT CARD DATA GENERATOR &nbsp;·&nbsp; TSYS TS2 SCHEMA
+  </div>
+
+  <!-- Domain badges -->
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <span style="background:#0f1f3d; color:#60a5fa; border:1px solid #1e3a5f;
+                 padding:4px 12px; border-radius:4px; font-size:12px;
+                 font-family:monospace; letter-spacing:0.3px;">
+      ACCOUNTS &nbsp;·&nbsp; CARDS &nbsp;·&nbsp; MERCHANTS
+    </span>
+    <span style="background:#0a2a1e; color:#34d399; border:1px solid #0d3d2a;
+                 padding:4px 12px; border-radius:4px; font-size:12px;
+                 font-family:monospace; letter-spacing:0.3px;">
+      TRANSACTIONS &nbsp;·&nbsp; AUTHORIZATIONS &nbsp;·&nbsp; STATEMENTS
+    </span>
+    <span style="background:#2a0f0f; color:#f87171; border:1px solid #3d1515;
+                 padding:4px 12px; border-radius:4px; font-size:12px;
+                 font-family:monospace; letter-spacing:0.3px;">
+      DISPUTES &nbsp;·&nbsp; FRAUD &nbsp;·&nbsp; COLLECTIONS &nbsp;·&nbsp; SCORES
+    </span>
+  </div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_cfg, tab_schema, tab_dash, tab_exp, tab_val = st.tabs(
