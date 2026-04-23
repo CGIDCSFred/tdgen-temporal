@@ -1,6 +1,6 @@
 """
 TDGen-Temporal — Streamlit UI
-Tabs: Configuration & Controls | Dashboard | Data Explorer | Validation
+Tabs: Control Panel | Dashboard | Data Explorer | Validation
 """
 
 import subprocess
@@ -113,7 +113,7 @@ with st.sidebar:
         st.metric("Transactions", f"{table_count('TRANSACTION'):,}")
         st.metric("Open disputes", f"{table_count('DISPUTE'):,}")
     else:
-        st.info("No database yet — use **Configuration** tab to initialise.")
+        st.info("No database yet — use the **Control Panel** tab to initialise.")
 
     st.divider()
     if st.button("🔄 Refresh data", use_container_width=True):
@@ -123,7 +123,7 @@ with st.sidebar:
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_cfg, tab_dash, tab_exp, tab_val = st.tabs(
     [
-        "⚙️  Configuration",
+        "⚙️  Control Panel",
         "📊  Dashboard",
         "🔍  Data Explorer",
         "✅  Validation",
@@ -152,20 +152,22 @@ touching production data.
         st.markdown(
             """
 **Step 1 — Configure** (optional)
-Edit `scenario.yaml` on the left to control population size, transaction rates, and
-lifecycle timings. Click **Save config** when done.
+Edit the Scenario configuration below to control population size, transaction rates,
+and lifecycle timings. Click **Save config** when done.
 
 **Step 2 — Initialise**
-Open the *Initialise (Day 0)* panel on the right. Pick a start date and click
-**Initialise**. This creates the database and seeds the opening population.
+Set the Start date in Simulation controls and click **Initialise**.
+This creates the database and seeds the opening population.
 
-**Step 3 — Advance**
-Use the *Advance* panel to move the simulation forward. Enter the number of days and
-click **Advance**. Repeat as many times as you like — each run appends new rows.
+**Step 3 — Fill data**
+Use the **Advance** control to fill data forward by a set number of days, or use the
+**Backfill** control to fill a specific date range backwards from the current date.
+Use **Reset** at any time to wipe the database and start a fresh simulation.
 
 **Step 4 — Explore**
-Switch to the **Dashboard** tab for charts, the **Data Explorer** tab to browse and
-drill into individual records, or the **Validation** tab to check data integrity.
+Head to the **Dashboard** tab for a summary of the portfolio, the **Data Explorer**
+tab to browse and drill into individual records, or the **Validation** tab to run
+data integrity checks across the generated dataset.
 """
         )
 
