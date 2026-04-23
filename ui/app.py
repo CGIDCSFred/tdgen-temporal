@@ -663,6 +663,14 @@ with tab_exp:
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 4 — Validation
 # ══════════════════════════════════════════════════════════════════════════════
+
+CAT_LABELS = {
+    "referential": "Referential Integrity",
+    "temporal": "Temporal Integrity",
+    "state": "State Consistency",
+}
+CAT_ORDER = ["referential", "temporal", "state"]
+
 with tab_val:
     if not db_ready(db_path):
         st.info("Initialise the simulation first.")
@@ -671,82 +679,125 @@ with tab_val:
         with v1:
             errors_only = st.checkbox("Errors only", value=False)
         with v2:
-            verbose = st.checkbox("Show example PKs", value=True)
+            hide_passing = st.checkbox("Hide passing checks", value=False)
         with v3:
             run_val = st.button("▶  Run", type="primary", use_container_width=True)
 
         if run_val:
             with st.spinner("Running validation suite…"):
-                cmd_args = [
-                    "validate",
-                    "--db",
-                    str(db_path),
-                ]
-                if verbose:
-                    cmd_args.append("--verbose")
-                if errors_only:
-                    cmd_args.append("--errors-only")
-                rc, out, err = run_cli(*cmd_args)
-            st.session_state["val_rc"] = rc
-            st.session_state["val_out"] = out
-            st.session_state["val_err"] = err
+                try:
+                    sys.path.insert(0, str(ROOT))
+                    from tdgen_temporal.validators import run_all as _run_all
 
-        if "val_out" in st.session_state:
-            rc = st.session_state["val_rc"]
-            out = st.session_state["val_out"]
-            err = st.session_state["val_err"]
+                    val_checks, val_findings = _run_all(db_path)
+                    st.session_state["val_checks"] = val_checks
+                    st.session_state["val_findings"] = val_findings
+                    st.session_state["val_exc"] = None
+                except Exception as exc:
+                    st.session_state["val_exc"] = str(exc)
 
-            if rc == 0:
-                st.success("All checks passed — no errors detected.")
+        if st.session_state.get("val_exc"):
+            st.error(f"Validation failed: {st.session_state['val_exc']}")
+
+        elif "val_checks" in st.session_state:
+            v_checks = st.session_state["val_checks"]
+            v_findings = st.session_state["val_findings"]
+            finding_map = {f.check.name: f for f in v_findings}
+
+            total = len(v_checks)
+            n_errors = sum(1 for f in v_findings if f.severity.value == "ERROR")
+            n_warnings = sum(1 for f in v_findings if f.severity.value == "WARNING")
+            n_pass = total - len(v_findings)
+            n_rows = sum(f.count for f in v_findings)
+
+            # ── Banner
+            if n_errors == 0 and n_warnings == 0:
+                st.success(f"All {total} checks passed — data integrity confirmed.")
+            elif n_errors == 0:
+                st.warning(f"{n_warnings} warning(s) across {n_rows:,} rows — no hard errors.")
             else:
-                st.warning("Validation complete — errors found.")
+                st.error(
+                    f"{n_errors} error(s) and {n_warnings} warning(s) found "
+                    f"across {n_rows:,} violating rows."
+                )
 
-            # Parse findings into a DataFrame
-            rows = []
-            for line in out.splitlines():
-                stripped = line.strip()
-                if not stripped:
+            # ── KPIs
+            kc = st.columns(5)
+            kc[0].metric("Total checks", total)
+            kc[1].metric("Passed", n_pass)
+            kc[2].metric("Errors", n_errors)
+            kc[3].metric("Warnings", n_warnings)
+            kc[4].metric("Violating rows", f"{n_rows:,}")
+
+            st.divider()
+
+            # ── Build full results table
+            all_rows = []
+            for chk in v_checks:
+                f = finding_map.get(chk.name)
+                all_rows.append(
+                    {
+                        "_cat": chk.category,
+                        "Description": chk.description,
+                        "Table": chk.table,
+                        "Severity": chk.severity.value,
+                        "Status": "FAIL" if f else "PASS",
+                        "Violating Rows": f.count if f else 0,
+                        "Example PKs": (
+                            ", ".join(str(e) for e in f.examples[:5]) if f and f.examples else ""
+                        ),
+                    }
+                )
+
+            full_df = pd.DataFrame(all_rows)
+
+            # Apply filters
+            view = full_df.copy()
+            if errors_only:
+                view = view[view["Severity"] == "ERROR"]
+            if hide_passing:
+                view = view[view["Status"] == "FAIL"]
+
+            DISPLAY_COLS = [
+                "Description",
+                "Table",
+                "Severity",
+                "Status",
+                "Violating Rows",
+                "Example PKs",
+            ]
+
+            def _style(row: pd.Series) -> list[str]:
+                if row["Status"] == "FAIL" and row["Severity"] == "ERROR":
+                    return ["background-color:#fff1f2"] * len(row)
+                if row["Status"] == "FAIL":
+                    return ["background-color:#fffbeb"] * len(row)
+                return [""] * len(row)
+
+            # ── One expander per category
+            for cat in CAT_ORDER:
+                cat_df = view[view["_cat"] == cat][DISPLAY_COLS]
+                if cat_df.empty:
                     continue
-                if "[ERROR]" in stripped:
-                    rows.append({"Severity": "ERROR", "Detail": stripped})
-                elif "[WARNING]" in stripped:
-                    rows.append({"Severity": "WARNING", "Detail": stripped})
-                elif stripped.startswith("PASS"):
-                    rows.append({"Severity": "PASS", "Detail": stripped})
-
-            if rows:
-                fdf = pd.DataFrame(rows)
-
-                # Summary counters
-                sc = st.columns(3)
-                sc[0].metric("PASS", len(fdf[fdf.Severity == "PASS"]), delta=None)
-                sc[1].metric("WARNING", len(fdf[fdf.Severity == "WARNING"]), delta=None)
-                sc[2].metric("ERROR", len(fdf[fdf.Severity == "ERROR"]), delta=None)
-
-                # Severity filter
-                sev_opts = fdf["Severity"].unique().tolist()
-                chosen = st.multiselect(
-                    "Show severities", sev_opts, default=sev_opts, key="val_sev"
+                cat_all = full_df[full_df["_cat"] == cat]
+                n_cat_fail = (cat_all["Status"] == "FAIL").sum()
+                n_cat_total = len(cat_all)
+                label = (
+                    f"{CAT_LABELS[cat]}  —  "
+                    f"{n_cat_total - n_cat_fail}/{n_cat_total} passing"
+                    + (f"  ·  {n_cat_fail} failing" if n_cat_fail else "")
                 )
-                show_df = fdf[fdf["Severity"].isin(chosen)]
-
-                def _sev_color(val: str) -> str:
-                    return {
-                        "ERROR": "color:#ef4444;font-weight:bold",
-                        "WARNING": "color:#f59e0b;font-weight:bold",
-                        "PASS": "color:#22c55e",
-                    }.get(val, "")
-
-                st.dataframe(
-                    show_df.style.map(_sev_color, subset=["Severity"]),
-                    width="stretch",
-                    hide_index=True,
-                )
-            else:
-                st.success("No structured findings in output.")
-
-            with st.expander("Raw validator output"):
-                st.text(out)
-            if err:
-                with st.expander("Stderr"):
-                    st.text(err)
+                with st.expander(label, expanded=n_cat_fail > 0):
+                    st.dataframe(
+                        cat_df.style.apply(_style, axis=1),
+                        width="stretch",
+                        hide_index=True,
+                        column_config={
+                            "Violating Rows": st.column_config.NumberColumn(
+                                "Violating Rows", format="%d"
+                            ),
+                            "Example PKs": st.column_config.TextColumn(
+                                "Example PKs", width="medium"
+                            ),
+                        },
+                    )
