@@ -1,8 +1,9 @@
 """
 TDGen-Temporal — Streamlit UI
-Tabs: Control Panel | Dashboard | Data Explorer | Validation
+Tabs: Control Panel | Schema | Dashboard | Data Explorer | Validation
 """
 
+import json
 import subprocess
 import sys
 from datetime import date
@@ -121,9 +122,10 @@ with st.sidebar:
         st.rerun()
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
-tab_cfg, tab_dash, tab_exp, tab_val = st.tabs(
+tab_cfg, tab_schema, tab_dash, tab_exp, tab_val = st.tabs(
     [
         "⚙️  Control Panel",
+        "🗂️  Schema",
         "📊  Dashboard",
         "🔍  Data Explorer",
         "✅  Validation",
@@ -311,7 +313,187 @@ data integrity checks across the generated dataset.
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 2 — Dashboard
+# TAB 2 — Schema
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_schema:
+    sys.path.insert(0, str(ROOT))
+    from tdgen_temporal.schema import (
+        GROUPS as _SCHEMA_GROUPS,
+    )
+    from tdgen_temporal.schema import (
+        extract_from_db as _extract_schema,
+    )
+    from tdgen_temporal.schema import (
+        to_graphviz_dot as _to_dot,
+    )
+    from tdgen_temporal.schema import (
+        to_json as _schema_to_json,
+    )
+    from tdgen_temporal.schema import (
+        to_sql_ddl as _schema_to_ddl,
+    )
+
+    # Resolve which schema to display: loaded file takes priority over live DB
+    _active_schema: dict | None = st.session_state.get("loaded_schema")
+    if _active_schema is None and db_ready(db_path):
+        _active_schema = _extract_schema(db_path)
+
+    # ── Top bar
+    sch_title_col, sch_source_col = st.columns([3, 2])
+    with sch_title_col:
+        if _active_schema:
+            st.subheader(_active_schema.get("name", "Schema"))
+            st.caption(_active_schema.get("description", ""))
+        else:
+            st.subheader("Schema")
+    with sch_source_col:
+        if st.session_state.get("loaded_schema"):
+            st.info("Showing **loaded** schema file — not the live database.")
+            if st.button("Clear loaded schema", key="clear_schema"):
+                del st.session_state["loaded_schema"]
+                st.rerun()
+        elif _active_schema:
+            st.success("Showing live schema from database.")
+
+    st.divider()
+
+    if _active_schema:
+        # ── Controls row
+        ctrl_left, ctrl_right = st.columns([3, 1])
+
+        with ctrl_right:
+            keys_only = st.toggle("Keys only  (PK + FK)", value=True, key="schema_keys_only")
+            st.caption("Turn off to show all columns.")
+
+        with ctrl_left:
+            available_groups = sorted(
+                {t["group"] for t in _active_schema["tables"]},
+                key=lambda g: list(_SCHEMA_GROUPS.keys()).index(g) if g in _SCHEMA_GROUPS else 99,
+            )
+            default_on = {"core", "transaction", "risk"}
+            gcols = st.columns(len(available_groups))
+            selected_groups: set[str] = set()
+            for gcol, grp in zip(gcols, available_groups):
+                label = _SCHEMA_GROUPS.get(grp, {}).get("label", grp)
+                if gcol.checkbox(label, value=grp in default_on, key=f"sg_{grp}"):
+                    selected_groups.add(grp)
+
+        # ── ER diagram
+        if selected_groups:
+            dot_src = _to_dot(_active_schema, selected_groups, keys_only=keys_only)
+            st.graphviz_chart(dot_src, use_container_width=True)
+            st.caption(
+                "Scroll / pinch to zoom · drag to pan · "
+                "PK = primary key (gold) · FK = foreign key (green)"
+            )
+        else:
+            st.info("Select at least one group above to display the diagram.")
+
+        # ── Export / load
+        st.divider()
+        exp_col, ddl_col, load_col = st.columns(3)
+
+        with exp_col:
+            st.subheader("Export schema")
+            json_bytes = _schema_to_json(_active_schema).encode()
+            st.download_button(
+                "⬇️  Download JSON schema",
+                data=json_bytes,
+                file_name="tsys_ts2_schema.json",
+                mime="application/json",
+                use_container_width=True,
+            )
+
+        with ddl_col:
+            st.subheader("Export SQL DDL")
+            if db_ready(db_path):
+                ddl_bytes = _schema_to_ddl(db_path).encode()
+                st.download_button(
+                    "⬇️  Download SQL DDL",
+                    data=ddl_bytes,
+                    file_name="tsys_ts2_schema.sql",
+                    mime="text/plain",
+                    use_container_width=True,
+                )
+            else:
+                st.caption("Initialise the simulation to enable DDL export.")
+
+        with load_col:
+            st.subheader("Load schema")
+            uploaded_schema = st.file_uploader(
+                "Upload a JSON schema file", type="json", key="schema_upload"
+            )
+            if uploaded_schema is not None:
+                try:
+                    parsed = json.loads(uploaded_schema.read())
+                    if "tables" not in parsed:
+                        st.error("Invalid schema file — missing 'tables' key.")
+                    else:
+                        st.session_state["loaded_schema"] = parsed
+                        st.success(
+                            f"Loaded: {parsed.get('name', 'schema')}  "
+                            f"({len(parsed['tables'])} tables)"
+                        )
+                        st.rerun()
+                except Exception as exc:
+                    st.error(f"Could not parse JSON: {exc}")
+
+        # ── Per-table column reference
+        st.divider()
+        st.subheader("Table reference")
+        st.caption("Expand any table to see all columns, types, and constraints.")
+
+        ref_groups = selected_groups if selected_groups else set(_SCHEMA_GROUPS.keys())
+        ref_tables = [t for t in _active_schema["tables"] if t["group"] in ref_groups]
+
+        for tbl in ref_tables:
+            desc = tbl.get("description", "")
+            n_cols = len(tbl["columns"])
+            with st.expander(f"**{tbl['name']}**  — {desc}  *({n_cols} columns)*"):
+                col_rows = []
+                for col in tbl["columns"]:
+                    constraints = []
+                    if col["pk"]:
+                        constraints.append("PRIMARY KEY")
+                    if col["fk"]:
+                        constraints.append(f"→ {col['fk']['table']}.{col['fk']['column']}")
+                    if not col["nullable"] and not col["pk"]:
+                        constraints.append("NOT NULL")
+                    col_rows.append(
+                        {
+                            "Column": col["name"],
+                            "Type": col["type"],
+                            "Constraints": "  ·  ".join(constraints) if constraints else "",
+                        }
+                    )
+                st.dataframe(
+                    pd.DataFrame(col_rows),
+                    width="stretch",
+                    hide_index=True,
+                )
+    else:
+        st.info(
+            "No schema available yet. "
+            "Initialise the simulation on the **Control Panel** tab, "
+            "or load a saved JSON schema using the uploader below."
+        )
+        uploaded_schema = st.file_uploader(
+            "Upload a JSON schema file", type="json", key="schema_upload_empty"
+        )
+        if uploaded_schema is not None:
+            try:
+                parsed = json.loads(uploaded_schema.read())
+                if "tables" not in parsed:
+                    st.error("Invalid schema file — missing 'tables' key.")
+                else:
+                    st.session_state["loaded_schema"] = parsed
+                    st.rerun()
+            except Exception as exc:
+                st.error(f"Could not parse JSON: {exc}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 3 — Dashboard
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_dash:
     if not db_ready(db_path):
