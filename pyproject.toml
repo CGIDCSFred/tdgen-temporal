@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "tdgen-temporal"
+version = "0.1.0"
+description = "Temporal synthetic test data generator for TSYS TS2"
+requires-python = ">=3.10"
+dependencies = [
+    "faker>=24.0",
+    "pandas>=2.0",
+    "pyyaml>=6.0",
+    "streamlit>=1.35.0",
+    "plotly>=5.22.0",
+]
+
+[project.scripts]
+tdgen = "tdgen_temporal.cli:main"
+
+# ── Ruff (linter + formatter) ─────────────────────────────────────────────────
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in default arguments
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]  # allow assert in tests
+
+# ── Mypy ──────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_return_any = false
+check_untyped_defs = false   # gradual adoption — tighten over time
+
+# ── Pytest ────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+# ── Coverage ──────────────────────────────────────────────────────────────────
+[tool.coverage.run]
+source = ["tdgen_temporal"]
+omit = ["tests/*", "ui/*", "docs/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

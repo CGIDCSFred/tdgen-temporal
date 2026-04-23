@@ -1,0 +1,41 @@
+simulation:
+  seed: 42
+  locale: en_CA
+  initial_population:
+    accounts: 500
+    merchants: 200
+    clients: 3
+    providers: 10
+    products: 20
+
+rates:
+  daily_new_accounts: 0.005
+  transactions_per_account_per_day_mean: 1.8
+  transactions_per_account_per_day_stddev: 1.2
+  payment_probability: 0.65
+  fraud_rate: 0.002
+  dispute_rate: 0.003
+  chargeback_rate: 0.40
+  delinquency_rate: 0.04
+  chargeoff_rate: 0.001
+  score_refresh_day: 1
+  fraud_confirmation_rate: 0.30
+  dispute_withdrawal_rate: 0.05
+
+lifecycle:
+  dispute_investigating_days: 7
+  dispute_resolution_days: 30
+  fraud_alert_review_days: 2
+  chargeback_representment_days: 10
+  collection_bucket_thresholds:
+    B1: 30
+    B2: 60
+    B3: 90
+    B4: 120
+    CHARGEOFF: 180
+
+output:
+  formats:
+    - csv
+    - json
+  write_snapshots: false

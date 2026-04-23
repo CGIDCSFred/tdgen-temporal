@@ -1,0 +1,53 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Simulation output (generated — not source-controlled)
+output/
+logs/
+*.db
+*.db-shm
+*.db-wal
+
+# Reports
+*.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Testing & lint caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Claude Code
+.claude/
+
+# Ad-hoc output directories
+output_30day/
+schemas/
