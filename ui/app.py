@@ -103,9 +103,9 @@ with st.sidebar:
     if meta:
         st.metric("Simulation date", str(meta.get("current_run_date", "—")))
         st.metric("Days simulated", f"{meta.get('total_runs', 0):,}")
-        st.metric("Accounts", f"{table_count('ACCOUNT'):,}")
-        st.metric("Transactions", f"{table_count('TRANSACTION'):,}")
-        st.metric("Open disputes", f"{table_count('DISPUTE'):,}")
+        st.metric("Entities", f"{table_count('ACCOUNT'):,}")
+        st.metric("Events", f"{table_count('TRANSACTION'):,}")
+        st.metric("Open cases", f"{table_count('DISPUTE'):,}")
     else:
         st.info("No database yet — use the **Control Panel** tab to initialise.")
 
@@ -126,48 +126,48 @@ st.markdown(
     position: relative;
     overflow: hidden;
 ">
-  <!-- Decorative background: scrolling data labels -->
+  <!-- Decorative background: generic data concepts -->
   <div style="
       position: absolute; top: 8px; right: 24px;
       font-family: monospace; font-size: 10px; line-height: 1.8;
       color: #1e3a5f; user-select: none; text-align: right;
   ">
-    ACCOUNT &nbsp;·&nbsp; CUSTOMER &nbsp;·&nbsp; CARD &nbsp;·&nbsp; MERCHANT<br>
-    AUTHORIZATION &nbsp;·&nbsp; TRANSACTION &nbsp;·&nbsp; STATEMENT<br>
-    DISPUTE &nbsp;·&nbsp; CHARGEBACK &nbsp;·&nbsp; FRAUD_ALERT<br>
-    SCORE_RECORD &nbsp;·&nbsp; COLLECTION_CASE<br>
-    0x4143 &nbsp; 0x5458 &nbsp; 0x4341 &nbsp; 0x4d52<br>
+    ENTITY &nbsp;·&nbsp; ATTRIBUTE &nbsp;·&nbsp; RELATIONSHIP &nbsp;·&nbsp; STATE<br>
+    EVENT &nbsp;·&nbsp; TRANSITION &nbsp;·&nbsp; LIFECYCLE &nbsp;·&nbsp; HISTORY<br>
+    SCHEMA &nbsp;·&nbsp; INSTANCE &nbsp;·&nbsp; TEMPORAL &nbsp;·&nbsp; SYNTHETIC<br>
+    SEED &nbsp;·&nbsp; ADVANCE &nbsp;·&nbsp; VALIDATE &nbsp;·&nbsp; EXPORT<br>
+    0x454e &nbsp; 0x5459 &nbsp; 0x5354 &nbsp; 0x4154<br>
     ████░░░░ &nbsp; ██████░░ &nbsp; ████████
   </div>
 
   <!-- Title -->
   <div style="font-size: 32px; font-weight: 800; color: #f1f5f9;
               letter-spacing: -0.5px; margin-bottom: 4px;">
-    🏦 &nbsp;TDGen&#8209;Temporal
+    🗄️ &nbsp;TDGen&#8209;Temporal
   </div>
 
   <!-- Strapline -->
   <div style="font-size: 14px; color: #64748b; font-family: monospace;
               margin-bottom: 18px; letter-spacing: 0.5px;">
-    SYNTHETIC CREDIT CARD DATA GENERATOR &nbsp;·&nbsp; TSYS TS2 SCHEMA
+    SCHEMA&#8209;DRIVEN SYNTHETIC DATA GENERATOR &nbsp;·&nbsp; TEMPORAL SIMULATION PLATFORM
   </div>
 
-  <!-- Domain badges -->
+  <!-- Concept badges -->
   <div style="display: flex; gap: 10px; flex-wrap: wrap;">
     <span style="background:#0f1f3d; color:#60a5fa; border:1px solid #1e3a5f;
                  padding:4px 12px; border-radius:4px; font-size:12px;
                  font-family:monospace; letter-spacing:0.3px;">
-      ACCOUNTS &nbsp;·&nbsp; CARDS &nbsp;·&nbsp; MERCHANTS
+      ENTITIES &nbsp;·&nbsp; RELATIONSHIPS &nbsp;·&nbsp; ATTRIBUTES
     </span>
     <span style="background:#0a2a1e; color:#34d399; border:1px solid #0d3d2a;
                  padding:4px 12px; border-radius:4px; font-size:12px;
                  font-family:monospace; letter-spacing:0.3px;">
-      TRANSACTIONS &nbsp;·&nbsp; AUTHORIZATIONS &nbsp;·&nbsp; STATEMENTS
+      EVENTS &nbsp;·&nbsp; TRANSITIONS &nbsp;·&nbsp; HISTORY
     </span>
     <span style="background:#2a0f0f; color:#f87171; border:1px solid #3d1515;
                  padding:4px 12px; border-radius:4px; font-size:12px;
                  font-family:monospace; letter-spacing:0.3px;">
-      DISPUTES &nbsp;·&nbsp; FRAUD &nbsp;·&nbsp; COLLECTIONS &nbsp;·&nbsp; SCORES
+      STATES &nbsp;·&nbsp; LIFECYCLE &nbsp;·&nbsp; VALIDATION
     </span>
   </div>
 </div>
@@ -194,10 +194,10 @@ with tab_cfg:
     # ── What is this tool?
     st.markdown(
         """
-**TDGen-Temporal** is a synthetic credit-card data generator.
-It seeds a realistic portfolio of accounts, customers, cards, and merchants, then
-advances the simulation day-by-day — producing transactions, disputes, fraud alerts,
-chargebacks, score records, and collection cases that evolve over time.
+**TDGen-Temporal** is a schema-driven synthetic data generator.
+Load any schema, define your entities and their relationships, then advance the
+simulation day-by-day — producing a rich temporal dataset of events, state
+transitions, and lifecycle history.
 
 Use it to build test datasets, train ML models, or explore data pipelines without
 touching production data.
