@@ -79,7 +79,7 @@ def get_meta() -> dict | None:
 
 
 def table_count(tbl: str) -> int:
-    df = query(f"SELECT COUNT(*) AS n FROM {tbl}")
+    df = query(f'SELECT COUNT(*) AS n FROM "{tbl}"')
     return int(df["n"].iloc[0]) if not df.empty else 0
 
 
@@ -352,7 +352,9 @@ data integrity checks across the generated dataset.
                 run_date,
                 run_mode,
                 accounts_processed,
-                COALESCE(json_extract(inserts_json,'$.TRANSACTION'),0)   AS txns_inserted,
+                COALESCE(json_extract(inserts_json,'$.TRANSACTION'),0)    AS txns_inserted,
+                COALESCE(json_extract(inserts_json,'$.AUTHORIZATION'),0)  AS auths_inserted,
+                COALESCE(json_extract(inserts_json,'$.SCORE_RECORD'),0)   AS scores_inserted,
                 COALESCE(json_extract(inserts_json,'$.DISPUTE'),0)        AS disputes_inserted,
                 COALESCE(json_extract(inserts_json,'$.FRAUD_ALERT'),0)    AS fraud_inserted,
                 COALESCE(json_extract(updates_json,'$.ACCOUNT'),0)        AS accounts_updated,
@@ -732,13 +734,18 @@ with tab_dash:
                 fig.update_layout(height=280, margin=dict(t=10, b=10), showlegend=False)
                 st.plotly_chart(fig, width="stretch")
             else:
-                st.info("No score records yet.")
+                cfg_scores = yaml.safe_load(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
+                refresh_day = cfg_scores.get("rates", {}).get("score_refresh_day", 1)
+                st.info(
+                    f"No score records yet. Scores are generated on day **{refresh_day}** of each "
+                    "month — advance the simulation past that date to see results."
+                )
 
         with r4b:
             st.subheader("Transaction type breakdown")
             txtype_df = query("""
                 SELECT transaction_type, COUNT(*) AS n, ROUND(SUM(transaction_amount),2) AS total_amount
-                FROM TRANSACTION GROUP BY transaction_type ORDER BY n DESC
+                FROM "TRANSACTION" GROUP BY transaction_type ORDER BY n DESC
             """)
             if not txtype_df.empty:
                 fig = px.bar(
@@ -789,7 +796,7 @@ with tab_exp:
             tbl_label = st.selectbox("Entity", list(TABLES.keys()), key="exp_table")
 
         tbl_name, pk_col = TABLES[tbl_label]
-        full_df = query(f"SELECT * FROM {tbl_name}")
+        full_df = query(f'SELECT * FROM "{tbl_name}"')
 
         with top_mid:
             search = st.text_input(
@@ -844,7 +851,7 @@ with tab_exp:
                     with st.expander(f"Transactions ({acc_id})"):
                         st.dataframe(
                             query(
-                                "SELECT * FROM TRANSACTION WHERE account_id=? ORDER BY post_date DESC LIMIT 100",
+                                'SELECT * FROM "TRANSACTION" WHERE account_id=? ORDER BY post_date DESC LIMIT 100',
                                 (acc_id,),
                             ),
                             width="stretch",
@@ -898,7 +905,7 @@ with tab_exp:
                         )
                     with st.expander(f"Fraud Alerts for transaction {txn_id}"):
                         st.dataframe(
-                            query("SELECT * FROM FRAUD_ALERT WHERE transaction_id=?", (txn_id,)),
+                            query("SELECT * FROM FRAUD_ALERT WHERE transaction_id=?", (txn_id,)),  # noqa: E501
                             width="stretch",
                             hide_index=True,
                         )

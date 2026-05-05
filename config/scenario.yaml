@@ -39,7 +39,7 @@ rates:
   dispute_withdrawal_rate: 0.05   # Fraction of disputes withdrawn by the cardholder within 3 days
 
   # Score refresh
-  score_refresh_day: 1  # Day-of-month (1–28) when credit score records are generated
+  score_refresh_day: 5  # Day-of-month (1–28) when credit score records are generated
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Lifecycle timings — how long each process takes (in days)
