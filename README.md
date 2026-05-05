@@ -335,16 +335,97 @@ this project on a new machine. It includes:
 
 ## Roadmap
 
-Agreed directions for future sprints:
+### The central design challenge — schema classification
 
-- **Generic schema-driven engine** — configurable entities, state machines, and event
-  generators driven by the loaded schema rather than hardcoded domain logic
-- **Field inference and generation hints** — Faker heuristics for standard fields;
-  `generation` hints in schema JSON for domain-specific enumerations
-- **Confluence schema ingestion** — pull a schema from a Confluence page via REST API;
-  parse the table into the internal schema JSON format
-- **Intranet deployment** — Windows service (NSSM), reverse proxy (IIS/nginx), Windows
-  Authentication SSO
+Making TDGen-Temporal truly domain-agnostic requires solving one hard problem:
+when an arbitrary schema is loaded, the engine must know the *role* each table
+plays in the simulation. In the current TSYS TS2 implementation this is all
+hardcoded. For any new schema it must be declared or inferred.
+
+Every simulation needs tables in three roles:
+
+| Role | What the engine does | TSYS TS2 examples |
+|---|---|---|
+| **Entity / dimension** | Seeded at Day 0 with a configured population; may have a lifecycle state machine | ACCOUNT, CUSTOMER, CARD, MERCHANT |
+| **Event** | Generated daily at a configured rate, referencing one or more entities | TRANSACTION, DISPUTE, FRAUD_ALERT |
+| **Reference / lookup** | Seeded once at init, static thereafter | REF_ACCOUNT_STATUS, REF_MCC |
+
+**Why structural inference alone is insufficient:**
+
+- A table with a primary key and foreign keys could be an entity (ACCOUNT
+  references PROVIDER and PRODUCT_DEFINITION) or an event (TRANSACTION
+  references ACCOUNT, CARD, and MERCHANT). The difference is semantic, not
+  structural.
+- A `*_status` column suggests a state machine exists, but says nothing about
+  which values are valid states or what the transition rates are.
+- Date/timestamp columns lean toward event tables, but entities also carry date
+  fields (ACCOUNT.open\_date, POLICY.inception\_date).
+- Naming conventions vary: DIM\_ / FACT\_ (data warehouse), verb nouns
+  (CLAIM\_SUBMISSION), or no convention at all.
+
+**Proposed approach — three layers:**
+
+**1. Schema annotation** (explicit, always correct)
+
+Extend the schema JSON with an optional `role` and `simulation` block per table.
+Standard fields (email, name, date) resolve automatically; only unusual or
+domain-specific fields need a `generation` hint.
+
+```json
+{ "name": "POLICY",
+  "role": "entity",
+  "simulation": {
+    "seed_population": 1000,
+    "state_field": "policy_status",
+    "states": ["ACTIVE", "LAPSED", "CANCELLED"],
+    "transitions": [
+      { "from": "ACTIVE", "to": "LAPSED",    "daily_rate": 0.002 },
+      { "from": "LAPSED", "to": "CANCELLED", "daily_rate": 0.05  }
+    ]
+  }
+}
+
+{ "name": "CLAIM",
+  "role": "event",
+  "simulation": { "source_entity": "POLICY", "daily_rate": 0.003 }
+}
+
+{ "name": "COVERAGE_TYPE", "role": "reference" }
+
+{ "name": "claim_type",
+  "generation": { "type": "choice", "values": ["AUTO","HOME","LIFE"] }
+}
+```
+
+**2. Heuristics + UI classification wizard** (reduces annotation burden)
+
+Run structural heuristics to make initial guesses — tables with no outbound
+foreign keys and short column lists are likely reference data; tables with
+many foreign keys to entities and date columns are likely events; tables with
+`*_status` or `*_state` columns are likely entities with state machines. Then
+present a Schema Classification step in the UI where the user reviews and
+corrects the guesses before the simulation starts.
+
+**3. LLM-assisted classification** (longer-term)
+
+Send the schema to the Claude API with table descriptions included (especially
+useful for Confluence-ingested schemas where column descriptions give semantic
+context). Ask it to classify tables by role and suggest state and transition
+configurations. Reduces manual annotation to edge cases only.
+
+### Planned sprints
+
+1. **Schema classification** — annotation format + UI classification wizard
+   (prerequisite for everything below)
+2. **Generic schema-driven engine** — seeding, event generation, and state
+   machines driven by the loaded schema rather than hardcoded TSYS domain logic
+3. **Field inference and generation hints** — Faker heuristics for standard
+   fields; `generation` hints in schema JSON for domain-specific coded values
+4. **Confluence schema ingestion** — pull a schema from a Confluence page via
+   REST API; parse it into the annotated schema JSON format; integrate with the
+   classification wizard
+5. **Intranet deployment** — Windows service (NSSM), reverse proxy (IIS/nginx),
+   Windows Authentication SSO
 
 ---
 
