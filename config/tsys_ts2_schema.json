@@ -1,0 +1,2717 @@
+{
+  "name": "TSYS TS2 Simulation Schema",
+  "version": "1.0",
+  "description": "Synthetic credit card portfolio schema modelled on the TSYS TS2 card processing platform. Covers the full lifecycle: account origination, daily transactions, disputes, fraud management, collections, and credit scoring.",
+  "exported_at": "2026-04-23T16:53:29",
+  "tables": [
+    {
+      "name": "ACCOUNT",
+      "group": "core",
+      "description": "Credit card account \u2014 the central simulation entity",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "provider_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "PROVIDER",
+            "column": "provider_id"
+          }
+        },
+        {
+          "name": "tsys_product_code",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "PRODUCT_DEFINITION",
+            "column": "tsys_product_code"
+          }
+        },
+        {
+          "name": "client_product_code",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "account_number",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "credit_limit",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "current_balance",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "available_credit",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "cash_advance_limit",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "cash_advance_balance",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "payment_due_amount",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "payment_due_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "last_payment_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "last_payment_amount",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "open_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "closed_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "account_status",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "status_reason",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "currency_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "cycle_day",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "days_delinquent",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "block_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "risk_score",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "last_monetary_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "last_non_monetary_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "AUTHORIZATION",
+      "group": "transaction",
+      "description": "Real-time authorisation request and response",
+      "columns": [
+        {
+          "name": "auth_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "card_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "CARD",
+            "column": "card_id"
+          }
+        },
+        {
+          "name": "merchant_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "MERCHANT",
+            "column": "merchant_id"
+          }
+        },
+        {
+          "name": "auth_timestamp",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "auth_amount",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "currency_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "auth_response_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "auth_approval_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "decline_reason",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "pos_entry_mode",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "pos_condition_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "channel",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "terminal_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "network",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "avs_response",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "cvv_response",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "risk_score",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "three_ds_result",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "ip_address",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "device_fingerprint",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "available_after_auth",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "auth_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "auth_hold_days",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "CARD",
+      "group": "core",
+      "description": "Physical or virtual card issued against an account",
+      "columns": [
+        {
+          "name": "card_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "card_number",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "card_sequence_number",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "cardholder_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "issue_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "card_status",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "card_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "chip_enabled",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "contactless_enabled",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "pin_offset",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "card_design_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "digital_wallet_token",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "token_requestor",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "last_used_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "CHARGEBACK",
+      "group": "risk",
+      "description": "Network-level chargeback escalated from a resolved dispute",
+      "columns": [
+        {
+          "name": "chargeback_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "dispute_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "DISPUTE",
+            "column": "dispute_id"
+          }
+        },
+        {
+          "name": "transaction_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "TRANSACTION",
+            "column": "transaction_id"
+          }
+        },
+        {
+          "name": "chargeback_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "chargeback_amount",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "chargeback_reason_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "chargeback_stage",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "representment_status",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "representment_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "recovered_amount",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "network_case_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "CLIENT",
+      "group": "core",
+      "description": "Top-level issuing client (bank or financial institution)",
+      "columns": [
+        {
+          "name": "client_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "client_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "bin_range",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "base_currency",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "region",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "processing_mode",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "association_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "COLLECTION_CASE",
+      "group": "risk",
+      "description": "Active collections case for a delinquent account",
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "case_opened_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "delinquency_bucket",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "amount_past_due",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "total_owed",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "case_status",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "assigned_collector",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "contact_method",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "last_contact_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "next_action_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "next_action",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "recovered_amount",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "chargeoff_reason",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "chargeoff_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "CUSTOMER",
+      "group": "core",
+      "description": "Primary cardholder linked to an account",
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "first_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "last_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "name_line_1",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "date_of_birth",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "ssn_sin",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "address_line_1",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "address_line_2",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "city",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "state_province",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "postal_zip",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "country_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "phone_home",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "phone_work",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "phone_mobile",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "language_preference",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "relationship_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "id_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "id_number",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "employer_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "annual_income",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "DISPUTE",
+      "group": "risk",
+      "description": "Cardholder dispute of a transaction",
+      "columns": [
+        {
+          "name": "dispute_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "transaction_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "TRANSACTION",
+            "column": "transaction_id"
+          }
+        },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "dispute_opened_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "dispute_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "dispute_status",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "dispute_reason_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "disputed_amount",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "cardholder_explanation",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "assigned_analyst",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "response_due_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "resolution",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "resolved_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "FRAUD_ALERT",
+      "group": "risk",
+      "description": "System-generated fraud flag on a transaction",
+      "columns": [
+        {
+          "name": "alert_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "transaction_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "TRANSACTION",
+            "column": "transaction_id"
+          }
+        },
+        {
+          "name": "alert_timestamp",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "alert_source",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "alert_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "risk_score",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "alert_status",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "action_taken",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "analyst_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "resolved_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "case_link",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "MERCHANT",
+      "group": "core",
+      "description": "Counterparty merchant for card transactions",
+      "columns": [
+        {
+          "name": "merchant_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "merchant_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "dba_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "mcc_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "terminal_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "acquirer_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "city",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "state_province",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "country_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "postal_zip",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "merchant_url",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "risk_tier",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "is_online",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "PRODUCT_DEFINITION",
+      "group": "core",
+      "description": "Card product with pricing, APR, limits, and rewards programme",
+      "columns": [
+        {
+          "name": "tsys_product_code",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "client_product_code",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "client_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "product_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "card_brand",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "default_credit_limit",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "annual_fee",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "apr_purchase",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "apr_cash_advance",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "grace_period_days",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "rewards_program",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "billing_cycle_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "fee_schedule_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "PROVIDER",
+      "group": "core",
+      "description": "Portfolio provider belonging to a client",
+      "columns": [
+        {
+          "name": "provider_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "client_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "CLIENT",
+            "column": "client_id"
+          }
+        },
+        {
+          "name": "provider_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "portfolio_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "reporting_group",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_ACCOUNT_STATUS",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "status_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "status_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_AUTH_RESPONSE",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "response_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "response_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "is_approved",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_CARD_BRAND",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "brand_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "brand_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "bin_prefix",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_CARD_STATUS",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "status_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "status_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "is_usable",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_CHANNEL",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "channel_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "channel_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_CHARGEBACK_STAGE",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "stage_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "stage_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "stage_order",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_COUNTRY",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "country_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "country_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "region",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_CURRENCY",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "currency_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "currency_name",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "symbol",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "decimal_places",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_DELINQUENCY_BUCKET",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "bucket_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "bucket_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "min_days",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "max_days",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "bucket_order",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_DISPUTE_TYPE",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "type_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "type_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_FRAUD_ALERT_TYPE",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "alert_type_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "alert_type_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "detection_system",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_MCC",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "mcc_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "mcc_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "mcc_group",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_POS_ENTRY_MODE",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "entry_mode_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "entry_mode_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "is_card_present",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_SENSITIVITY_LEVEL",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "sensitivity_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "sensitivity_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "generation_rule",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "applicable_regulations",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_STATUS_REASON",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "reason_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "reason_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "applies_to_status",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "REF_TRANSACTION_TYPE",
+      "group": "reference",
+      "description": "",
+      "columns": [
+        {
+          "name": "type_code",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "type_description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "is_debit",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "weight_pct",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "SCORE_RECORD",
+      "group": "risk",
+      "description": "Monthly credit score snapshot per account",
+      "columns": [
+        {
+          "name": "score_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "score_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "score_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "score_value",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "score_band",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "decision",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "action_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "result_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "STATEMENT",
+      "group": "transaction",
+      "description": "Monthly billing statement for an account",
+      "columns": [
+        {
+          "name": "statement_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "statement_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "payment_due_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "opening_balance",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "closing_balance",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "total_credits",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "total_debits",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "minimum_payment",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "interest_charged",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "fees_charged",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "transaction_count",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "available_credit",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "cycle_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "TRANSACTION",
+      "group": "transaction",
+      "description": "Posted transaction (settled approved authorisations)",
+      "columns": [
+        {
+          "name": "transaction_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "card_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "CARD",
+            "column": "card_id"
+          }
+        },
+        {
+          "name": "merchant_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "MERCHANT",
+            "column": "merchant_id"
+          }
+        },
+        {
+          "name": "auth_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "AUTHORIZATION",
+            "column": "auth_id"
+          }
+        },
+        {
+          "name": "transaction_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "post_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "transaction_amount",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "billing_amount",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "transaction_currency",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "conversion_rate",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "transaction_type",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "transaction_status",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "mcc_code",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "pos_entry_mode",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "channel",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "reference_number",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "batch_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "is_recurring",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "is_international",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "interchange_qualifier",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "interchange_fee",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "statement_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": {
+            "table": "STATEMENT",
+            "column": "statement_id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "account_temporal_state",
+      "group": "temporal",
+      "description": "",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": {
+            "table": "ACCOUNT",
+            "column": "account_id"
+          }
+        },
+        {
+          "name": "current_state",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "days_delinquent",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "consecutive_missed_payments",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "last_payment_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "last_statement_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "payment_due_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "cycle_day",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "as_of_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "card_temporal_state",
+      "group": "temporal",
+      "description": "",
+      "columns": [
+        {
+          "name": "card_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": {
+            "table": "CARD",
+            "column": "card_id"
+          }
+        },
+        {
+          "name": "current_state",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "days_to_expiry",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "replacement_issued",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "as_of_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "chargeback_temporal_state",
+      "group": "temporal",
+      "description": "",
+      "columns": [
+        {
+          "name": "chargeback_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": {
+            "table": "CHARGEBACK",
+            "column": "chargeback_id"
+          }
+        },
+        {
+          "name": "current_state",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "days_open",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "as_of_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "collection_case_temporal_state",
+      "group": "temporal",
+      "description": "",
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": {
+            "table": "COLLECTION_CASE",
+            "column": "case_id"
+          }
+        },
+        {
+          "name": "current_state",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "current_bucket",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "days_in_bucket",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "as_of_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "dispute_temporal_state",
+      "group": "temporal",
+      "description": "",
+      "columns": [
+        {
+          "name": "dispute_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": {
+            "table": "DISPUTE",
+            "column": "dispute_id"
+          }
+        },
+        {
+          "name": "current_state",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "days_open",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "resolved_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "as_of_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "fraud_alert_temporal_state",
+      "group": "temporal",
+      "description": "",
+      "columns": [
+        {
+          "name": "alert_id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": {
+            "table": "FRAUD_ALERT",
+            "column": "alert_id"
+          }
+        },
+        {
+          "name": "current_state",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "days_open",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "reviewed_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "as_of_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "pk_sequences",
+      "group": "control",
+      "description": "",
+      "columns": [
+        {
+          "name": "table_name",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "next_id",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "run_log",
+      "group": "control",
+      "description": "",
+      "columns": [
+        {
+          "name": "run_id",
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "run_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "run_mode",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "accounts_processed",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "inserts_json",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "updates_json",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "duration_seconds",
+          "type": "REAL",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        }
+      ]
+    },
+    {
+      "name": "simulation_meta",
+      "group": "control",
+      "description": "",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "current_run_date",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "last_run_id",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "total_runs",
+          "type": "INTEGER",
+          "pk": false,
+          "nullable": true,
+          "fk": null
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "pk": false,
+          "nullable": false,
+          "fk": null
+        }
+      ]
+    }
+  ]
+}
