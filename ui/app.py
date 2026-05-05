@@ -734,7 +734,11 @@ with tab_dash:
                 fig.update_layout(height=280, margin=dict(t=10, b=10), showlegend=False)
                 st.plotly_chart(fig, width="stretch")
             else:
-                cfg_scores = yaml.safe_load(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
+                cfg_scores = (
+                    yaml.safe_load(config_path.read_text(encoding="utf-8"))
+                    if config_path.exists()
+                    else {}
+                )
                 refresh_day = cfg_scores.get("rates", {}).get("score_refresh_day", 1)
                 st.info(
                     f"No score records yet. Scores are generated on day **{refresh_day}** of each "
