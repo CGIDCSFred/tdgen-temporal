@@ -13,6 +13,18 @@ assumption.
 
 ---
 
+## For colleagues — getting started or rebuilding
+
+> **[REBUILD.md](REBUILD.md)** contains everything needed to get this project
+> running on a new machine, or to recreate it entirely from scratch using
+> Claude Code with no repository access.
+>
+> It includes: prerequisites, clone-and-run steps, and a complete self-contained
+> Claude Code prompt that specifies every module, table, state machine, and UI
+> component in the project.
+
+---
+
 ## Features
 
 - **Temporal consistency** — every event (transaction, dispute, score) respects the open
@@ -309,9 +321,15 @@ Runs ruff format + ruff check on every commit.
 
 ## Rebuilding from scratch
 
-`REBUILD.md` in the project root is a complete guide for reproducing this project
-on a new machine — including how to use Claude Code with `docs/REBUILD_PROMPT.md`
-to regenerate the engine if you don't have repository access.
+**[REBUILD.md](REBUILD.md)** is a complete, self-contained guide for reproducing
+this project on a new machine. It includes:
+
+- A **clone-and-run** path (fastest — requires repository access)
+- A **Claude Code rebuild** path: a single prompt covering every file, table,
+  state machine, generator, validator, and UI component — paste it into Claude Code
+  and the entire project is regenerated from scratch, no files needed beforehand
+- All known gotchas (SQLite reserved keywords, score refresh timing, temporal guards)
+- Verification steps and a troubleshooting table
 
 ---
 
