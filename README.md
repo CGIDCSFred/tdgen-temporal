@@ -1,6 +1,6 @@
 # TDGen-Temporal
 
-**Schema-driven synthetic test data generator with temporal simulation.**
+**A schema-driven synthetic test data generator with temporal simulation.**
 
 Load any relational schema, configure a scenario, and run a day-by-day simulation
 that produces temporally consistent, referentially valid synthetic data — complete
