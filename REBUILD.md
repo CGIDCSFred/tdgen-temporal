@@ -1032,7 +1032,9 @@ TAB 1 — Control Panel:
   Two columns [3,2]:
     Left: st.text_area for scenario.yaml, Save config button (validate YAML first).
     Right: four st.expander sections:
-      🚀 Initialise: date_input + Initialise button → run_cli("init",...)
+      🚀 Initialise: date_input + Initialise button →
+        call st.cache_data.clear() BEFORE run_cli("init",...) to release any
+        cached SQLite connections held by the parent process, then run_cli("init",...)
       ⏩ Advance: number_input(days) + Advance button → run_cli("advance",...)
       📅 Backfill: two date_inputs + Run backfill → run_cli("backfill",...)
       🗑️ Reset: warning + Reset button → db_path.unlink(missing_ok=True)
@@ -1179,11 +1181,19 @@ Jobs (all ubuntu-latest, Python 3.11 unless stated):
    `ruff format --check` and fails if any file would be reformatted.
 
 6. Windows file lock on re-init: On Windows, SQLite database files cannot be
-   deleted while any Python object still holds an open connection. In
-   init_runner.py, call `gc.collect()` immediately before `db_path.unlink()`
-   to force Python to release any lingering connections from prior Streamlit
-   page renders. Without this, clicking Initialise a second time raises
-   PermissionError [WinError 32].
+   deleted while any Python object still holds an open connection. Two fixes
+   work together:
+   (a) In app.py, call st.cache_data.clear() immediately before run_cli("init")
+       so the parent Streamlit process releases its cached connections first.
+   (b) In init_runner.py, call gc.collect() before db_path.unlink() to release
+       any remaining Python-held connections in the subprocess.
+   Without both, clicking Initialise a second time raises PermissionError [WinError 32].
+
+7. Two browser windows open: If two browser tabs are both pointing at the same
+   Streamlit app, each tab's renders open and cache their own SQLite connections.
+   Re-initialising from one tab while the other is open will fail with WinError 32
+   because the second tab's connections lock the file. Always close extra tabs
+   before clicking Initialise.
 ```
 
 ---
@@ -1265,5 +1275,5 @@ domain-agnostic and require no changes.
 | Stale data after Reset | Press F5 in the browser after resetting — Streamlit caches state within a session |
 | `pandera` / `openpyxl` not found | Install from `requirements.txt`: `pip install -r requirements.txt` |
 | CI lint fails | Run `ruff format .` locally before pushing |
-| Init fails with PermissionError WinError 32 | Streamlit holds a SQLite connection open; ensure `gc.collect()` is called before `db_path.unlink()` in `init_runner.py` |
+| Init fails with PermissionError WinError 32 | Close any extra browser tabs pointing at the app; ensure `st.cache_data.clear()` is called before `run_cli("init")` in `app.py` and `gc.collect()` before `db_path.unlink()` in `init_runner.py` |
 | `python` not found in PowerShell | Python was not added to PATH during install; reinstall and tick **Add to PATH**, or use the full path `C:\Users\<you>\AppData\Local\Programs\Python\Python3xx\python.exe` |
