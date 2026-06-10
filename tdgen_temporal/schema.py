@@ -110,9 +110,19 @@ _TABLE_SIMULATION: dict[str, dict | None] = {
         "state_field": "account_status",
         "states": ["ACTIVE", "DELINQUENT", "CHARGEOFF", "CLOSED"],
         "transitions": [
-            {"from": "ACTIVE",     "to": "DELINQUENT", "trigger": "missed_payment",    "daily_rate": 0.04},
-            {"from": "DELINQUENT", "to": "ACTIVE",     "trigger": "payment_received",  "daily_rate": 0.65},
-            {"from": "DELINQUENT", "to": "CHARGEOFF",  "trigger": "days_past_due_180", "daily_rate": 0.001},
+            {"from": "ACTIVE", "to": "DELINQUENT", "trigger": "missed_payment", "daily_rate": 0.04},
+            {
+                "from": "DELINQUENT",
+                "to": "ACTIVE",
+                "trigger": "payment_received",
+                "daily_rate": 0.65,
+            },
+            {
+                "from": "DELINQUENT",
+                "to": "CHARGEOFF",
+                "trigger": "days_past_due_180",
+                "daily_rate": 0.001,
+            },
         ],
     },
     "CARD": {
@@ -121,7 +131,7 @@ _TABLE_SIMULATION: dict[str, dict | None] = {
         "states": ["ACTIVE", "BLOCKED", "EXPIRED", "CANCELLED", "REPLACED"],
         "transitions": [
             {"from": "ACTIVE", "to": "EXPIRED", "trigger": "expiry_date_passed"},
-            {"from": "ACTIVE", "to": "BLOCKED",  "trigger": "account_chargeoff"},
+            {"from": "ACTIVE", "to": "BLOCKED", "trigger": "account_chargeoff"},
         ],
     },
     "AUTHORIZATION": {
@@ -142,12 +152,18 @@ _TABLE_SIMULATION: dict[str, dict | None] = {
         "source_entity": "TRANSACTION",
         "daily_rate": 0.003,
         "state_field": "dispute_status",
-        "states": ["OPEN", "INVESTIGATING", "RESOLVED_FOR_CARDHOLDER", "RESOLVED_FOR_MERCHANT", "WITHDRAWN"],
+        "states": [
+            "OPEN",
+            "INVESTIGATING",
+            "RESOLVED_FOR_CARDHOLDER",
+            "RESOLVED_FOR_MERCHANT",
+            "WITHDRAWN",
+        ],
         "transitions": [
-            {"from": "OPEN",          "to": "INVESTIGATING",           "trigger": "days_open_7"},
-            {"from": "OPEN",          "to": "WITHDRAWN",               "trigger": "withdrawal_rate", "daily_rate": 0.05},
+            {"from": "OPEN", "to": "INVESTIGATING", "trigger": "days_open_7"},
+            {"from": "OPEN", "to": "WITHDRAWN", "trigger": "withdrawal_rate", "daily_rate": 0.05},
             {"from": "INVESTIGATING", "to": "RESOLVED_FOR_CARDHOLDER", "trigger": "days_open_30"},
-            {"from": "INVESTIGATING", "to": "RESOLVED_FOR_MERCHANT",   "trigger": "days_open_30"},
+            {"from": "INVESTIGATING", "to": "RESOLVED_FOR_MERCHANT", "trigger": "days_open_30"},
         ],
     },
     "CHARGEBACK": {
@@ -156,9 +172,9 @@ _TABLE_SIMULATION: dict[str, dict | None] = {
         "state_field": "chargeback_status",
         "states": ["OPEN", "REPRESENTMENT", "ARBITRATION", "RESOLVED"],
         "transitions": [
-            {"from": "OPEN",          "to": "REPRESENTMENT", "trigger": "days_open_10"},
-            {"from": "REPRESENTMENT", "to": "ARBITRATION",   "trigger": "escalation"},
-            {"from": "REPRESENTMENT", "to": "RESOLVED",      "trigger": "merchant_acceptance"},
+            {"from": "OPEN", "to": "REPRESENTMENT", "trigger": "days_open_10"},
+            {"from": "REPRESENTMENT", "to": "ARBITRATION", "trigger": "escalation"},
+            {"from": "REPRESENTMENT", "to": "RESOLVED", "trigger": "merchant_acceptance"},
         ],
     },
     "FRAUD_ALERT": {
@@ -167,8 +183,13 @@ _TABLE_SIMULATION: dict[str, dict | None] = {
         "state_field": "alert_status",
         "states": ["OPEN", "UNDER_REVIEW", "CONFIRMED", "FALSE_POSITIVE"],
         "transitions": [
-            {"from": "OPEN",         "to": "UNDER_REVIEW",   "trigger": "days_open_2"},
-            {"from": "UNDER_REVIEW", "to": "CONFIRMED",      "trigger": "fraud_confirmation_rate", "daily_rate": 0.30},
+            {"from": "OPEN", "to": "UNDER_REVIEW", "trigger": "days_open_2"},
+            {
+                "from": "UNDER_REVIEW",
+                "to": "CONFIRMED",
+                "trigger": "fraud_confirmation_rate",
+                "daily_rate": 0.30,
+            },
             {"from": "UNDER_REVIEW", "to": "FALSE_POSITIVE", "trigger": "non_confirmation"},
         ],
     },
@@ -184,9 +205,9 @@ _TABLE_SIMULATION: dict[str, dict | None] = {
         "state_field": "case_status",
         "states": ["OPEN", "B1", "B2", "B3", "B4", "CHARGEOFF"],
         "transitions": [
-            {"from": "B1", "to": "B2",        "trigger": "days_past_due_60"},
-            {"from": "B2", "to": "B3",        "trigger": "days_past_due_90"},
-            {"from": "B3", "to": "B4",        "trigger": "days_past_due_120"},
+            {"from": "B1", "to": "B2", "trigger": "days_past_due_60"},
+            {"from": "B2", "to": "B3", "trigger": "days_past_due_90"},
+            {"from": "B3", "to": "B4", "trigger": "days_past_due_120"},
             {"from": "B4", "to": "CHARGEOFF", "trigger": "days_past_due_180"},
         ],
     },

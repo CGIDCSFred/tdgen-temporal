@@ -504,10 +504,10 @@ with tab_schema:
         ref_tables = [t for t in _active_schema["tables"] if t["group"] in ref_groups]
 
         _ROLE_BADGE: dict[str, str] = {
-            "entity":    "🟦 entity",
-            "event":     "🟩 event",
+            "entity": "🟦 entity",
+            "event": "🟩 event",
             "reference": "🟪 reference",
-            "control":   "⬛ control",
+            "control": "⬛ control",
         }
 
         for tbl in ref_tables:
@@ -515,9 +515,7 @@ with tab_schema:
             n_cols = len(tbl["columns"])
             role = tbl.get("role", "")
             role_badge = _ROLE_BADGE.get(role, role)
-            with st.expander(
-                f"**{tbl['name']}**  {role_badge}  — {desc}  *({n_cols} columns)*"
-            ):
+            with st.expander(f"**{tbl['name']}**  {role_badge}  — {desc}  *({n_cols} columns)*"):
                 sim = tbl.get("simulation")
                 if sim:
                     sim_cols = st.columns(2)
