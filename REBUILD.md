@@ -4,29 +4,37 @@ This document is for colleagues who want to run or recreate TDGen-Temporal.
 It covers two paths: cloning the existing repository (fastest), and rebuilding
 the entire project from scratch using Claude Code (no repo access required).
 
+**TD Bank Group note:** This project runs entirely on Windows with Python and
+SQLite. No Docker, no containers, no cloud services, and no elevated privileges
+are required. Everything runs locally on your workstation.
+
 ---
 
 ## Prerequisites
 
 | Tool | Version | Notes |
 |---|---|---|
-| Python | 3.10 or later | https://www.python.org/downloads/ |
+| Python | 3.10 or later | https://www.python.org/downloads/ — tick **Add to PATH** during install |
 | Git | any | https://git-scm.com/download/win |
 | Graphviz | 12.x | https://graphviz.org/download/ — tick **Add to PATH** during install |
 | Claude Code CLI | latest | `npm install -g @anthropic-ai/claude-code` (requires Node 18+) |
 
-Verify Graphviz is on PATH after install:
+Verify both PATH-dependent tools after install:
 
-```
+```powershell
+python --version
 dot -V
 ```
+
+If `dot` is not found, reinstall Graphviz and ensure the option to add to PATH
+is checked, then open a new terminal.
 
 ---
 
 ## Option A — Clone and run (fastest)
 
 ```powershell
-git clone <repo-url> tdgen-temporal
+git clone https://github.com/CGIDCSFred/tdgen-temporal.git tdgen-temporal
 cd tdgen-temporal
 
 python -m venv .venv
@@ -46,7 +54,7 @@ Browser opens at **http://localhost:8501**.
 ## Option B — Rebuild from scratch with Claude Code
 
 Use this if you have no repository access or want to regenerate the project
-on a clean machine.
+on a clean machine, or adapt it for a different domain.
 
 ### Step 1 — Create a project directory
 
@@ -94,6 +102,9 @@ dependencies, run smoke tests, initialise the simulation at 2024-01-01, advance
 - plotly >= 5.22.0
 - pandera >= 0.20
 - openpyxl >= 3.1
+
+No Docker, containers, or external services are required. The entire application
+runs locally on Windows using only the above pip packages.
 
 ⚠ CRITICAL SQLITE NOTE: "TRANSACTION" and "AUTHORIZATION" are reserved keywords
 in SQLite. Always quote them in DDL and DML:
@@ -792,6 +803,10 @@ Four subcommands. All default: --db output/state.db, --config config/scenario.ya
 --output output.
 
 init --date YYYY-MM-DD [--db] [--config]
+  Import gc at the top of init_runner.py.
+  Before db_path.unlink(), call gc.collect() to release any open SQLite
+  connections held by Python objects not yet garbage-collected. This prevents
+  PermissionError [WinError 32] on Windows when re-initialising.
   Delete existing DB, create all tables, seed Day 0 population,
   set simulation_meta, record init run.
 
@@ -825,10 +840,66 @@ _TABLE_DESCRIPTIONS maps 15 entity table names to one-line human descriptions.
 _FOREIGN_KEYS maps table names to list of {col, ref_table, ref_col} dicts
   for logical FK relationships (FK enforcement is OFF in SQLite).
 
+_TABLE_ROLES: dict[str, str] — maps table name to simulation role:
+  "entity"    CLIENT, PROVIDER, PRODUCT_DEFINITION, MERCHANT, ACCOUNT, CUSTOMER, CARD
+              (seeded at Day 0 with a configured population; may have a state machine)
+  "event"     AUTHORIZATION, TRANSACTION, STATEMENT, DISPUTE, CHARGEBACK,
+              FRAUD_ALERT, SCORE_RECORD, COLLECTION_CASE
+              (rows generated daily at a configured rate)
+  "control"   simulation_meta, run_log, pk_sequences, and all *_temporal_state tables
+              (internal engine tracking — not part of the domain model)
+  REF_* tables automatically receive role="reference" (seeded once, static thereafter)
+
+_TABLE_SIMULATION: dict[str, dict | None] — maps table name to simulation block.
+  Entities without a state machine: {"seed_population": N}
+  Entities with a state machine:
+    {"seed_population": N, "state_field": "col_name",
+     "states": [...],
+     "transitions": [{"from":..., "to":..., "trigger":..., "daily_rate":...}, ...]}
+  Events:
+    {"source_entity": "TABLE_NAME", "daily_rate": N}   (or daily_rate_mean/stddev)
+    optionally include state_field/states/transitions for events with lifecycles
+  control and reference tables: None
+
+  Key entries to include:
+    ACCOUNT: seed_population=500, state_field="account_status",
+      states=[ACTIVE,DELINQUENT,CHARGEOFF,CLOSED],
+      transitions=[ACTIVE→DELINQUENT(missed_payment,0.04),
+                   DELINQUENT→ACTIVE(payment_received,0.65),
+                   DELINQUENT→CHARGEOFF(days_past_due_180,0.001)]
+    CARD: seed_population=500, state_field="card_status",
+      states=[ACTIVE,BLOCKED,EXPIRED,CANCELLED,REPLACED],
+      transitions=[ACTIVE→EXPIRED(expiry_date_passed),ACTIVE→BLOCKED(account_chargeoff)]
+    TRANSACTION: source_entity=ACCOUNT, daily_rate_mean=1.8, daily_rate_stddev=1.2
+    DISPUTE: source_entity=TRANSACTION, daily_rate=0.003,
+      state_field="dispute_status",
+      states=[OPEN,INVESTIGATING,RESOLVED_FOR_CARDHOLDER,RESOLVED_FOR_MERCHANT,WITHDRAWN]
+    FRAUD_ALERT: source_entity=TRANSACTION, daily_rate=0.002,
+      state_field="alert_status",
+      states=[OPEN,UNDER_REVIEW,CONFIRMED,FALSE_POSITIVE]
+    CLIENT: seed_population=3
+    PROVIDER: seed_population=10
+    PRODUCT_DEFINITION: seed_population=20
+    MERCHANT: seed_population=200
+    CUSTOMER: seed_population=500
+    AUTHORIZATION: source_entity=ACCOUNT, daily_rate_mean=1.8, daily_rate_stddev=1.2
+    STATEMENT: source_entity=ACCOUNT, trigger=monthly_cycle_day
+    CHARGEBACK: source_entity=DISPUTE, daily_rate=0.40,
+      state_field="chargeback_status", states=[OPEN,REPRESENTMENT,ARBITRATION,RESOLVED]
+    SCORE_RECORD: source_entity=ACCOUNT, trigger=monthly_score_refresh_day,
+      state_field="score_band",
+      states=[EXCELLENT,GOOD,FAIR,MEDIUM,LOW,VERY_HIGH_RISK]
+    COLLECTION_CASE: source_entity=ACCOUNT, trigger=account_delinquency,
+      state_field="case_status", states=[OPEN,B1,B2,B3,B4,CHARGEOFF]
+
 extract_from_db(db_path) → dict:
   Read sqlite_master, PRAGMA table_info per table, build structured schema dict:
   {"name":..., "version":"1.0", "description":..., "exported_at":...,
-   "tables":[{"name","group","description","columns":[{"name","type","pk","nullable","fk"}]}]}
+   "tables":[{"name","group","role","description","simulation",
+              "columns":[{"name","type","pk","nullable","fk"}]}]}
+  For each table:
+    if name starts with "REF_": role="reference", else role=_TABLE_ROLES.get(name,"control")
+    simulation=_TABLE_SIMULATION.get(name)  (None for reference and control tables)
 
 to_json(schema) → str: json.dumps(schema, indent=2)
 
@@ -977,7 +1048,19 @@ TAB 2 — Schema:
   st.graphviz_chart(dot_src, use_container_width=True) — zoom/pan built in.
   Three columns: Export JSON (download_button), Export SQL DDL (download_button),
     Load schema (file_uploader for JSON, validate "tables" key, store in session_state).
-  Per-table expandable reference: column name, type, constraints (PK/FK/NOT NULL).
+  Per-table expandable reference:
+    Each table expander header shows a role badge emoji:
+      entity → "🟦 entity", event → "🟩 event",
+      reference → "🟪 reference", control → "⬛ control"
+    Inside the expander, if the table has a simulation block (tbl["simulation"]):
+      Show two columns:
+        Left: seed_population (if present), source_entity (if present),
+          daily_rate or daily_rate_mean±stddev (if present), trigger (if present)
+        Right: states list joined with " → " (if present),
+          then one st.caption per transition showing
+          "FROM → TO  `trigger`  (daily_rate)" format
+    Then show the column reference dataframe: column name, type,
+      constraints (PK / FK arrow / NOT NULL).
 
 TAB 3 — Dashboard:
   KPI row (7 cols): Accounts, Customers, Cards, Transactions, Disputes,
@@ -1094,6 +1177,13 @@ Jobs (all ubuntu-latest, Python 3.11 unless stated):
 
 5. Ruff formatting: run `ruff format .` before every commit. CI runs
    `ruff format --check` and fails if any file would be reformatted.
+
+6. Windows file lock on re-init: On Windows, SQLite database files cannot be
+   deleted while any Python object still holds an open connection. In
+   init_runner.py, call `gc.collect()` immediately before `db_path.unlink()`
+   to force Python to release any lingering connections from prior Streamlit
+   page renders. Without this, clicking Initialise a second time raises
+   PermissionError [WinError 32].
 ```
 
 ---
@@ -1122,7 +1212,8 @@ Entity dropdown).
 
 ## Export the demo schema file
 
-After the simulation is running, generate the bundled demo schema:
+After the simulation is running, generate the bundled demo schema with full
+role and simulation annotations:
 
 ```powershell
 python -c "
@@ -1135,7 +1226,31 @@ print('Exported', len(schema['tables']), 'tables to config/tsys_ts2_schema.json'
 ```
 
 Load `config/tsys_ts2_schema.json` in the Schema tab to demonstrate the
-schema ingestion feature without needing a live database.
+schema ingestion feature without needing a live database. Each table in the
+exported file carries its `role` (entity / event / reference / control) and
+`simulation` block (seed population, state machine states and transitions,
+daily event rates), which are displayed in the Schema tab table reference.
+
+---
+
+## Adapting for a different domain
+
+The TSYS TS2 credit-card scenario is the reference example, not a hardcoded
+assumption. To repurpose the tool for a different domain (e.g. insurance,
+retail, lending):
+
+1. Replace the DDL in `db/migrations.py` with your domain's tables.
+2. Replace the reference data in `generators/ref_tables.py`.
+3. Replace the Day 0 seeders in `generators/seed.py`.
+4. Replace or add state machines in `state_machines/` — one per entity lifecycle.
+5. Replace the event generator in `generators/transaction.py` with your domain's
+   daily events.
+6. Update `_TABLE_GROUPS`, `_TABLE_DESCRIPTIONS`, `_TABLE_ROLES`, and
+   `_TABLE_SIMULATION` in `schema.py` to match your new tables.
+7. Update `scenario.yaml` with appropriate population sizes and rates.
+
+The simulation engine, delta writer, validators, CLI, and UI are all
+domain-agnostic and require no changes.
 
 ---
 
@@ -1150,3 +1265,5 @@ schema ingestion feature without needing a live database.
 | Stale data after Reset | Press F5 in the browser after resetting — Streamlit caches state within a session |
 | `pandera` / `openpyxl` not found | Install from `requirements.txt`: `pip install -r requirements.txt` |
 | CI lint fails | Run `ruff format .` locally before pushing |
+| Init fails with PermissionError WinError 32 | Streamlit holds a SQLite connection open; ensure `gc.collect()` is called before `db_path.unlink()` in `init_runner.py` |
+| `python` not found in PowerShell | Python was not added to PATH during install; reinstall and tick **Add to PATH**, or use the full path `C:\Users\<you>\AppData\Local\Programs\Python\Python3xx\python.exe` |
