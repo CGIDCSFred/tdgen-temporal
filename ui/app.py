@@ -256,6 +256,7 @@ data integrity checks across the generated dataset.
             init_date = st.date_input("Start date", value=date(2024, 1, 1), key="init_date")
             if st.button("Initialise", type="primary", use_container_width=True):
                 with st.spinner("Seeding Day 0 population…"):
+                    st.cache_data.clear()  # release cached SQLite connections before deleting DB
                     rc, out, err = run_cli(
                         "init",
                         "--db",
