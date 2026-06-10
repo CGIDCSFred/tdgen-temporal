@@ -7,7 +7,38 @@
     {
       "name": "ACCOUNT",
       "group": "core",
+      "role": "entity",
       "description": "Credit card account \u2014 the central simulation entity",
+      "simulation": {
+        "seed_population": 500,
+        "state_field": "account_status",
+        "states": [
+          "ACTIVE",
+          "DELINQUENT",
+          "CHARGEOFF",
+          "CLOSED"
+        ],
+        "transitions": [
+          {
+            "from": "ACTIVE",
+            "to": "DELINQUENT",
+            "trigger": "missed_payment",
+            "daily_rate": 0.04
+          },
+          {
+            "from": "DELINQUENT",
+            "to": "ACTIVE",
+            "trigger": "payment_received",
+            "daily_rate": 0.65
+          },
+          {
+            "from": "DELINQUENT",
+            "to": "CHARGEOFF",
+            "trigger": "days_past_due_180",
+            "daily_rate": 0.001
+          }
+        ]
+      },
       "columns": [
         {
           "name": "account_id",
@@ -195,7 +226,13 @@
     {
       "name": "AUTHORIZATION",
       "group": "transaction",
+      "role": "event",
       "description": "Real-time authorisation request and response",
+      "simulation": {
+        "source_entity": "ACCOUNT",
+        "daily_rate_mean": 1.8,
+        "daily_rate_stddev": 1.2
+      },
       "columns": [
         {
           "name": "auth_id",
@@ -379,7 +416,31 @@
     {
       "name": "CARD",
       "group": "core",
+      "role": "entity",
       "description": "Physical or virtual card issued against an account",
+      "simulation": {
+        "seed_population": 500,
+        "state_field": "card_status",
+        "states": [
+          "ACTIVE",
+          "BLOCKED",
+          "EXPIRED",
+          "CANCELLED",
+          "REPLACED"
+        ],
+        "transitions": [
+          {
+            "from": "ACTIVE",
+            "to": "EXPIRED",
+            "trigger": "expiry_date_passed"
+          },
+          {
+            "from": "ACTIVE",
+            "to": "BLOCKED",
+            "trigger": "account_chargeoff"
+          }
+        ]
+      },
       "columns": [
         {
           "name": "card_id",
@@ -501,7 +562,36 @@
     {
       "name": "CHARGEBACK",
       "group": "risk",
+      "role": "event",
       "description": "Network-level chargeback escalated from a resolved dispute",
+      "simulation": {
+        "source_entity": "DISPUTE",
+        "daily_rate": 0.4,
+        "state_field": "chargeback_status",
+        "states": [
+          "OPEN",
+          "REPRESENTMENT",
+          "ARBITRATION",
+          "RESOLVED"
+        ],
+        "transitions": [
+          {
+            "from": "OPEN",
+            "to": "REPRESENTMENT",
+            "trigger": "days_open_10"
+          },
+          {
+            "from": "REPRESENTMENT",
+            "to": "ARBITRATION",
+            "trigger": "escalation"
+          },
+          {
+            "from": "REPRESENTMENT",
+            "to": "RESOLVED",
+            "trigger": "merchant_acceptance"
+          }
+        ]
+      },
       "columns": [
         {
           "name": "chargeback_id",
@@ -591,7 +681,11 @@
     {
       "name": "CLIENT",
       "group": "core",
+      "role": "entity",
       "description": "Top-level issuing client (bank or financial institution)",
+      "simulation": {
+        "seed_population": 3
+      },
       "columns": [
         {
           "name": "client_id",
@@ -647,7 +741,43 @@
     {
       "name": "COLLECTION_CASE",
       "group": "risk",
+      "role": "event",
       "description": "Active collections case for a delinquent account",
+      "simulation": {
+        "source_entity": "ACCOUNT",
+        "trigger": "account_delinquency",
+        "state_field": "case_status",
+        "states": [
+          "OPEN",
+          "B1",
+          "B2",
+          "B3",
+          "B4",
+          "CHARGEOFF"
+        ],
+        "transitions": [
+          {
+            "from": "B1",
+            "to": "B2",
+            "trigger": "days_past_due_60"
+          },
+          {
+            "from": "B2",
+            "to": "B3",
+            "trigger": "days_past_due_90"
+          },
+          {
+            "from": "B3",
+            "to": "B4",
+            "trigger": "days_past_due_120"
+          },
+          {
+            "from": "B4",
+            "to": "CHARGEOFF",
+            "trigger": "days_past_due_180"
+          }
+        ]
+      },
       "columns": [
         {
           "name": "case_id",
@@ -762,7 +892,11 @@
     {
       "name": "CUSTOMER",
       "group": "core",
+      "role": "entity",
       "description": "Primary cardholder linked to an account",
+      "simulation": {
+        "seed_population": 500
+      },
       "columns": [
         {
           "name": "customer_id",
@@ -933,7 +1067,43 @@
     {
       "name": "DISPUTE",
       "group": "risk",
+      "role": "event",
       "description": "Cardholder dispute of a transaction",
+      "simulation": {
+        "source_entity": "TRANSACTION",
+        "daily_rate": 0.003,
+        "state_field": "dispute_status",
+        "states": [
+          "OPEN",
+          "INVESTIGATING",
+          "RESOLVED_FOR_CARDHOLDER",
+          "RESOLVED_FOR_MERCHANT",
+          "WITHDRAWN"
+        ],
+        "transitions": [
+          {
+            "from": "OPEN",
+            "to": "INVESTIGATING",
+            "trigger": "days_open_7"
+          },
+          {
+            "from": "OPEN",
+            "to": "WITHDRAWN",
+            "trigger": "withdrawal_rate",
+            "daily_rate": 0.05
+          },
+          {
+            "from": "INVESTIGATING",
+            "to": "RESOLVED_FOR_CARDHOLDER",
+            "trigger": "days_open_30"
+          },
+          {
+            "from": "INVESTIGATING",
+            "to": "RESOLVED_FOR_MERCHANT",
+            "trigger": "days_open_30"
+          }
+        ]
+      },
       "columns": [
         {
           "name": "dispute_id",
@@ -1037,7 +1207,37 @@
     {
       "name": "FRAUD_ALERT",
       "group": "risk",
+      "role": "event",
       "description": "System-generated fraud flag on a transaction",
+      "simulation": {
+        "source_entity": "TRANSACTION",
+        "daily_rate": 0.002,
+        "state_field": "alert_status",
+        "states": [
+          "OPEN",
+          "UNDER_REVIEW",
+          "CONFIRMED",
+          "FALSE_POSITIVE"
+        ],
+        "transitions": [
+          {
+            "from": "OPEN",
+            "to": "UNDER_REVIEW",
+            "trigger": "days_open_2"
+          },
+          {
+            "from": "UNDER_REVIEW",
+            "to": "CONFIRMED",
+            "trigger": "fraud_confirmation_rate",
+            "daily_rate": 0.3
+          },
+          {
+            "from": "UNDER_REVIEW",
+            "to": "FALSE_POSITIVE",
+            "trigger": "non_confirmation"
+          }
+        ]
+      },
       "columns": [
         {
           "name": "alert_id",
@@ -1134,7 +1334,11 @@
     {
       "name": "MERCHANT",
       "group": "core",
+      "role": "entity",
       "description": "Counterparty merchant for card transactions",
+      "simulation": {
+        "seed_population": 200
+      },
       "columns": [
         {
           "name": "merchant_id",
@@ -1232,7 +1436,11 @@
     {
       "name": "PRODUCT_DEFINITION",
       "group": "core",
+      "role": "entity",
       "description": "Card product with pricing, APR, limits, and rewards programme",
+      "simulation": {
+        "seed_population": 20
+      },
       "columns": [
         {
           "name": "tsys_product_code",
@@ -1330,7 +1538,11 @@
     {
       "name": "PROVIDER",
       "group": "core",
+      "role": "entity",
       "description": "Portfolio provider belonging to a client",
+      "simulation": {
+        "seed_population": 10
+      },
       "columns": [
         {
           "name": "provider_id",
@@ -1382,7 +1594,9 @@
     {
       "name": "REF_ACCOUNT_STATUS",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "status_code",
@@ -1417,7 +1631,9 @@
     {
       "name": "REF_AUTH_RESPONSE",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "response_code",
@@ -1452,7 +1668,9 @@
     {
       "name": "REF_CARD_BRAND",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "brand_code",
@@ -1487,7 +1705,9 @@
     {
       "name": "REF_CARD_STATUS",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "status_code",
@@ -1522,7 +1742,9 @@
     {
       "name": "REF_CHANNEL",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "channel_code",
@@ -1550,7 +1772,9 @@
     {
       "name": "REF_CHARGEBACK_STAGE",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "stage_code",
@@ -1578,7 +1802,9 @@
     {
       "name": "REF_COUNTRY",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "country_code",
@@ -1606,7 +1832,9 @@
     {
       "name": "REF_CURRENCY",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "currency_code",
@@ -1641,7 +1869,9 @@
     {
       "name": "REF_DELINQUENCY_BUCKET",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "bucket_code",
@@ -1683,7 +1913,9 @@
     {
       "name": "REF_DISPUTE_TYPE",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "type_code",
@@ -1711,7 +1943,9 @@
     {
       "name": "REF_FRAUD_ALERT_TYPE",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "alert_type_code",
@@ -1746,7 +1980,9 @@
     {
       "name": "REF_MCC",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "mcc_code",
@@ -1781,7 +2017,9 @@
     {
       "name": "REF_POS_ENTRY_MODE",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "entry_mode_code",
@@ -1816,7 +2054,9 @@
     {
       "name": "REF_SENSITIVITY_LEVEL",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "sensitivity_code",
@@ -1851,7 +2091,9 @@
     {
       "name": "REF_STATUS_REASON",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "reason_code",
@@ -1879,7 +2121,9 @@
     {
       "name": "REF_TRANSACTION_TYPE",
       "group": "reference",
+      "role": "reference",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "type_code",
@@ -1914,7 +2158,21 @@
     {
       "name": "SCORE_RECORD",
       "group": "risk",
+      "role": "event",
       "description": "Monthly credit score snapshot per account",
+      "simulation": {
+        "source_entity": "ACCOUNT",
+        "trigger": "monthly_score_refresh_day",
+        "state_field": "score_band",
+        "states": [
+          "EXCELLENT",
+          "GOOD",
+          "FAIR",
+          "MEDIUM",
+          "LOW",
+          "VERY_HIGH_RISK"
+        ]
+      },
       "columns": [
         {
           "name": "score_id",
@@ -1994,7 +2252,12 @@
     {
       "name": "STATEMENT",
       "group": "transaction",
+      "role": "event",
       "description": "Monthly billing statement for an account",
+      "simulation": {
+        "source_entity": "ACCOUNT",
+        "trigger": "monthly_cycle_day"
+      },
       "columns": [
         {
           "name": "statement_id",
@@ -2102,7 +2365,13 @@
     {
       "name": "TRANSACTION",
       "group": "transaction",
+      "role": "event",
       "description": "Posted transaction (settled approved authorisations)",
+      "simulation": {
+        "source_entity": "ACCOUNT",
+        "daily_rate_mean": 1.8,
+        "daily_rate_stddev": 1.2
+      },
       "columns": [
         {
           "name": "transaction_id",
@@ -2292,7 +2561,9 @@
     {
       "name": "account_temporal_state",
       "group": "temporal",
+      "role": "control",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "account_id",
@@ -2365,7 +2636,9 @@
     {
       "name": "card_temporal_state",
       "group": "temporal",
+      "role": "control",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "card_id",
@@ -2410,7 +2683,9 @@
     {
       "name": "chargeback_temporal_state",
       "group": "temporal",
+      "role": "control",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "chargeback_id",
@@ -2448,7 +2723,9 @@
     {
       "name": "collection_case_temporal_state",
       "group": "temporal",
+      "role": "control",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "case_id",
@@ -2493,7 +2770,9 @@
     {
       "name": "dispute_temporal_state",
       "group": "temporal",
+      "role": "control",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "dispute_id",
@@ -2538,7 +2817,9 @@
     {
       "name": "fraud_alert_temporal_state",
       "group": "temporal",
+      "role": "control",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "alert_id",
@@ -2583,7 +2864,9 @@
     {
       "name": "pk_sequences",
       "group": "control",
+      "role": "control",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "table_name",
@@ -2604,7 +2887,9 @@
     {
       "name": "run_log",
       "group": "control",
+      "role": "control",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "run_id",
@@ -2667,7 +2952,9 @@
     {
       "name": "simulation_meta",
       "group": "control",
+      "role": "control",
       "description": "",
+      "simulation": null,
       "columns": [
         {
           "name": "id",

@@ -65,6 +65,133 @@ _TABLE_DESCRIPTIONS: dict[str, str] = {
     "COLLECTION_CASE": "Active collections case for a delinquent account",
 }
 
+# ── Simulation roles ───────────────────────────────────────────────────────────
+# Each domain table has one of four roles that governs how the engine handles it:
+#   entity    — seeded at Day 0 with a configured population; may have a state machine
+#   event     — rows generated daily at a configured rate, referencing one or more entities
+#   reference — seeded once at init, static thereafter (REF_* tables auto-assigned)
+#   control   — internal engine tracking tables; not part of the domain model
+
+_TABLE_ROLES: dict[str, str] = {
+    "CLIENT": "entity",
+    "PROVIDER": "entity",
+    "PRODUCT_DEFINITION": "entity",
+    "MERCHANT": "entity",
+    "ACCOUNT": "entity",
+    "CUSTOMER": "entity",
+    "CARD": "entity",
+    "AUTHORIZATION": "event",
+    "TRANSACTION": "event",
+    "STATEMENT": "event",
+    "DISPUTE": "event",
+    "CHARGEBACK": "event",
+    "FRAUD_ALERT": "event",
+    "SCORE_RECORD": "event",
+    "COLLECTION_CASE": "event",
+    "simulation_meta": "control",
+    "run_log": "control",
+    "pk_sequences": "control",
+    "account_temporal_state": "control",
+    "card_temporal_state": "control",
+    "dispute_temporal_state": "control",
+    "fraud_alert_temporal_state": "control",
+    "chargeback_temporal_state": "control",
+    "collection_case_temporal_state": "control",
+}
+
+_TABLE_SIMULATION: dict[str, dict | None] = {
+    "CLIENT": {"seed_population": 3},
+    "PROVIDER": {"seed_population": 10},
+    "PRODUCT_DEFINITION": {"seed_population": 20},
+    "MERCHANT": {"seed_population": 200},
+    "CUSTOMER": {"seed_population": 500},
+    "ACCOUNT": {
+        "seed_population": 500,
+        "state_field": "account_status",
+        "states": ["ACTIVE", "DELINQUENT", "CHARGEOFF", "CLOSED"],
+        "transitions": [
+            {"from": "ACTIVE",     "to": "DELINQUENT", "trigger": "missed_payment",    "daily_rate": 0.04},
+            {"from": "DELINQUENT", "to": "ACTIVE",     "trigger": "payment_received",  "daily_rate": 0.65},
+            {"from": "DELINQUENT", "to": "CHARGEOFF",  "trigger": "days_past_due_180", "daily_rate": 0.001},
+        ],
+    },
+    "CARD": {
+        "seed_population": 500,
+        "state_field": "card_status",
+        "states": ["ACTIVE", "BLOCKED", "EXPIRED", "CANCELLED", "REPLACED"],
+        "transitions": [
+            {"from": "ACTIVE", "to": "EXPIRED", "trigger": "expiry_date_passed"},
+            {"from": "ACTIVE", "to": "BLOCKED",  "trigger": "account_chargeoff"},
+        ],
+    },
+    "AUTHORIZATION": {
+        "source_entity": "ACCOUNT",
+        "daily_rate_mean": 1.8,
+        "daily_rate_stddev": 1.2,
+    },
+    "TRANSACTION": {
+        "source_entity": "ACCOUNT",
+        "daily_rate_mean": 1.8,
+        "daily_rate_stddev": 1.2,
+    },
+    "STATEMENT": {
+        "source_entity": "ACCOUNT",
+        "trigger": "monthly_cycle_day",
+    },
+    "DISPUTE": {
+        "source_entity": "TRANSACTION",
+        "daily_rate": 0.003,
+        "state_field": "dispute_status",
+        "states": ["OPEN", "INVESTIGATING", "RESOLVED_FOR_CARDHOLDER", "RESOLVED_FOR_MERCHANT", "WITHDRAWN"],
+        "transitions": [
+            {"from": "OPEN",          "to": "INVESTIGATING",           "trigger": "days_open_7"},
+            {"from": "OPEN",          "to": "WITHDRAWN",               "trigger": "withdrawal_rate", "daily_rate": 0.05},
+            {"from": "INVESTIGATING", "to": "RESOLVED_FOR_CARDHOLDER", "trigger": "days_open_30"},
+            {"from": "INVESTIGATING", "to": "RESOLVED_FOR_MERCHANT",   "trigger": "days_open_30"},
+        ],
+    },
+    "CHARGEBACK": {
+        "source_entity": "DISPUTE",
+        "daily_rate": 0.40,
+        "state_field": "chargeback_status",
+        "states": ["OPEN", "REPRESENTMENT", "ARBITRATION", "RESOLVED"],
+        "transitions": [
+            {"from": "OPEN",          "to": "REPRESENTMENT", "trigger": "days_open_10"},
+            {"from": "REPRESENTMENT", "to": "ARBITRATION",   "trigger": "escalation"},
+            {"from": "REPRESENTMENT", "to": "RESOLVED",      "trigger": "merchant_acceptance"},
+        ],
+    },
+    "FRAUD_ALERT": {
+        "source_entity": "TRANSACTION",
+        "daily_rate": 0.002,
+        "state_field": "alert_status",
+        "states": ["OPEN", "UNDER_REVIEW", "CONFIRMED", "FALSE_POSITIVE"],
+        "transitions": [
+            {"from": "OPEN",         "to": "UNDER_REVIEW",   "trigger": "days_open_2"},
+            {"from": "UNDER_REVIEW", "to": "CONFIRMED",      "trigger": "fraud_confirmation_rate", "daily_rate": 0.30},
+            {"from": "UNDER_REVIEW", "to": "FALSE_POSITIVE", "trigger": "non_confirmation"},
+        ],
+    },
+    "SCORE_RECORD": {
+        "source_entity": "ACCOUNT",
+        "trigger": "monthly_score_refresh_day",
+        "state_field": "score_band",
+        "states": ["EXCELLENT", "GOOD", "FAIR", "MEDIUM", "LOW", "VERY_HIGH_RISK"],
+    },
+    "COLLECTION_CASE": {
+        "source_entity": "ACCOUNT",
+        "trigger": "account_delinquency",
+        "state_field": "case_status",
+        "states": ["OPEN", "B1", "B2", "B3", "B4", "CHARGEOFF"],
+        "transitions": [
+            {"from": "B1", "to": "B2",        "trigger": "days_past_due_60"},
+            {"from": "B2", "to": "B3",        "trigger": "days_past_due_90"},
+            {"from": "B3", "to": "B4",        "trigger": "days_past_due_120"},
+            {"from": "B4", "to": "CHARGEOFF", "trigger": "days_past_due_180"},
+        ],
+    },
+}
+
 # Logical FK relationships (PRAGMA foreign_keys=OFF in this DB — enforced in app layer)
 _FOREIGN_KEYS: dict[str, list[dict]] = {
     "PROVIDER": [
@@ -175,14 +302,18 @@ def extract_from_db(db_path: Path) -> dict:
 
         if tbl.startswith("REF_"):
             group = "reference"
+            role = "reference"
         else:
             group = _TABLE_GROUPS.get(tbl, "other")
+            role = _TABLE_ROLES.get(tbl, "control")
 
         tables.append(
             {
                 "name": tbl,
                 "group": group,
+                "role": role,
                 "description": _TABLE_DESCRIPTIONS.get(tbl, ""),
+                "simulation": _TABLE_SIMULATION.get(tbl),
                 "columns": columns,
             }
         )

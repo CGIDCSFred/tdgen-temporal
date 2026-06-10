@@ -502,10 +502,50 @@ with tab_schema:
         ref_groups = selected_groups if selected_groups else set(_SCHEMA_GROUPS.keys())
         ref_tables = [t for t in _active_schema["tables"] if t["group"] in ref_groups]
 
+        _ROLE_BADGE: dict[str, str] = {
+            "entity":    "🟦 entity",
+            "event":     "🟩 event",
+            "reference": "🟪 reference",
+            "control":   "⬛ control",
+        }
+
         for tbl in ref_tables:
             desc = tbl.get("description", "")
             n_cols = len(tbl["columns"])
-            with st.expander(f"**{tbl['name']}**  — {desc}  *({n_cols} columns)*"):
+            role = tbl.get("role", "")
+            role_badge = _ROLE_BADGE.get(role, role)
+            with st.expander(
+                f"**{tbl['name']}**  {role_badge}  — {desc}  *({n_cols} columns)*"
+            ):
+                sim = tbl.get("simulation")
+                if sim:
+                    sim_cols = st.columns(2)
+                    with sim_cols[0]:
+                        st.caption("**Simulation**")
+                        if "seed_population" in sim:
+                            st.write(f"Seed population: **{sim['seed_population']:,}**")
+                        if "source_entity" in sim:
+                            st.write(f"Source entity: **{sim['source_entity']}**")
+                        if "daily_rate" in sim:
+                            st.write(f"Daily rate: **{sim['daily_rate']}**")
+                        if "daily_rate_mean" in sim:
+                            st.write(
+                                f"Daily rate: **{sim['daily_rate_mean']}** "
+                                f"(±{sim.get('daily_rate_stddev', '')})"
+                            )
+                        if "trigger" in sim:
+                            st.write(f"Trigger: **{sim['trigger']}**")
+                    if "states" in sim:
+                        with sim_cols[1]:
+                            st.caption("**States**")
+                            st.write(" → ".join(sim["states"]))
+                            if "transitions" in sim:
+                                for tx in sim["transitions"]:
+                                    rate = f" ({tx['daily_rate']})" if "daily_rate" in tx else ""
+                                    st.caption(
+                                        f"{tx['from']} → {tx['to']}  `{tx['trigger']}`{rate}"
+                                    )
+
                 col_rows = []
                 for col in tbl["columns"]:
                     constraints = []

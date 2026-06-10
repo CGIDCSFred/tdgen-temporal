@@ -2,6 +2,7 @@
 Init runner — seeds the database from scratch for Day 0.
 """
 
+import gc
 import time
 import uuid
 from datetime import date
@@ -48,6 +49,7 @@ def run_init(
     db_path.parent.mkdir(parents=True, exist_ok=True)
     if db_path.exists():
         print(f"[init] Removing existing database {db_path}...")
+        gc.collect()  # release any lingering SQLite connections (Windows file lock)
         db_path.unlink()
 
     print(f"[init] Creating tables in {db_path}...")

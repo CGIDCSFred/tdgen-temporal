@@ -54,6 +54,16 @@ assumption.
 
 ---
 
+## GitHub Codespaces
+
+A dev container configuration is included. To run in Codespaces:
+
+1. Open the repo on GitHub → **Code → Codespaces → Create codespace on main**
+2. The container installs Python dependencies and Claude Code automatically
+3. Add your `ANTHROPIC_API_KEY` as a [Codespaces secret](https://github.com/settings/codespaces) so Claude Code authenticates without a manual login step
+
+---
+
 ## Quick start
 
 ```powershell
@@ -415,8 +425,9 @@ configurations. Reduces manual annotation to edge cases only.
 
 ### Planned sprints
 
-1. **Schema classification** — annotation format + UI classification wizard
-   (prerequisite for everything below)
+1. **Schema classification** — ✅ annotation format implemented (`role` + `simulation`
+   blocks in schema JSON, surfaced in the Schema tab UI); classification wizard and
+   LLM-assisted classification still to come
 2. **Generic schema-driven engine** — seeding, event generation, and state
    machines driven by the loaded schema rather than hardcoded TSYS domain logic
 3. **Field inference and generation hints** — Faker heuristics for standard
