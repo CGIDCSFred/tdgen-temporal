@@ -176,13 +176,14 @@ st.markdown(
 )
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
-tab_cfg, tab_schema, tab_dash, tab_exp, tab_val = st.tabs(
+tab_cfg, tab_schema, tab_dash, tab_exp, tab_val, tab_tc = st.tabs(
     [
         "⚙️  Control Panel",
         "🗂️  Schema",
         "📊  Dashboard",
         "🔍  Data Explorer",
         "✅  Validation",
+        "🧪  Test Cases",
     ]
 )
 
@@ -1124,3 +1125,79 @@ with tab_val:
                             ),
                         },
                     )
+
+# ── TAB 6 — Test Cases ────────────────────────────────────────────────────────
+
+_TC_CATEGORY_COLOURS = {
+    "Baseline": "#60a5fa",
+    "Lifecycle": "#f59e0b",
+    "Dispute": "#f87171",
+    "Fraud": "#c084fc",
+}
+
+with tab_tc:
+    if not db_ready(db_path):
+        st.info("Initialise and advance the simulation first.")
+    else:
+        sys.path.insert(0, str(ROOT))
+        from tdgen_temporal.test_cases import ALL_CASES
+        from tdgen_temporal.test_cases import run_cases as _run_cases
+
+        st.subheader("Test Cases")
+        st.caption(
+            "Named business scenarios mined from the simulation. "
+            "Each scenario shows real record IDs you can use directly in test scripts."
+        )
+
+        with st.spinner("Mining scenarios…"):
+            tc_results = _run_cases(db_path)
+
+        # ── Summary metrics
+        total = len(ALL_CASES)
+        populated = sum(1 for k, df in tc_results.items() if not df.empty)
+        empty = total - populated
+
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Total scenarios", total)
+        m2.metric("With data", populated)
+        m3.metric("Need more history", empty)
+
+        if empty > 0:
+            st.caption(
+                "Scenarios showing 0 results need more simulation history — "
+                "try advancing another 30–60 days."
+            )
+
+        st.divider()
+
+        # ── Group by category
+        categories = list(dict.fromkeys(c.category for c in ALL_CASES))
+
+        for category in categories:
+            colour = _TC_CATEGORY_COLOURS.get(category, "#94a3b8")
+            st.markdown(
+                f"<span style='color:{colour};font-weight:700;font-size:15px'>{category}</span>",
+                unsafe_allow_html=True,
+            )
+            for case in [c for c in ALL_CASES if c.category == category]:
+                df = tc_results.get(case.key, pd.DataFrame())
+                count = len(df)
+                status = f"{count} instance{'s' if count != 1 else ''}" if count else "⚠ no data"
+                with st.expander(f"**{case.name}**  —  *{status}*"):
+                    st.caption(case.description)
+                    if df.empty:
+                        st.info(
+                            "No matching records yet. "
+                            "Advance the simulation further to generate this scenario."
+                        )
+                    else:
+                        st.dataframe(df, hide_index=True, use_container_width=True)
+                        csv = df.to_csv(index=False).encode()
+                        st.download_button(
+                            "⬇️  Export CSV",
+                            data=csv,
+                            file_name=f"tc_{case.key}.csv",
+                            mime="text/csv",
+                            key=f"dl_{case.key}",
+                        )
+            st.write("")
